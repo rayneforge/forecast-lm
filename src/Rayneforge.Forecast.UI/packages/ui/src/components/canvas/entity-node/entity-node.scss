@@ -1,0 +1,101 @@
+@use "@rayneforge/styles" as *;
+
+// Distinctive purple for entities
+$color-entity-border: #8A2BE2; // BlueViolet
+$color-entity-bg: rgba(20, 15, 25, 0.95);
+
+.rf-entity-node {
+    position: absolute;
+    width: 200px;
+    background: $color-entity-bg;
+    border: 1px solid $color-border-subtle;
+    border-top: 3px solid $color-entity-border;
+    border-radius: $radius-md;
+    box-shadow: $elevation-1;
+    padding: $spacing-3;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    transition: all $motion-normal $ease-standard;
+
+    &--selected {
+        border-color: $color-accent-primary;
+        border-top-color: $color-entity-border; // keep identity
+        box-shadow: $elevation-float;
+    }
+
+    &--dragging {
+        cursor: grabbing;
+        box-shadow: $elevation-node-drag;
+        transition: none;
+        z-index: 9999 !important;
+    }
+
+    // Header: Type pill + Name
+    &__header {
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-1;
+        margin-bottom: $spacing-2;
+    }
+
+    &__type {
+        align-self: flex-start;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: $color-entity-border;
+        font-weight: 700;
+        background: rgba($color-entity-border, 0.1);
+        padding: 2px 6px;
+        border-radius: $radius-sm;
+    }
+
+    &__name {
+        margin: 0;
+        font-size: $font-size-body;
+        font-weight: 600;
+        color: $color-text-primary;
+        line-height: $line-height-tight;
+    }
+
+    &__desc {
+        font-size: $font-size-meta;
+        color: $color-text-secondary;
+        line-height: $line-height-normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    // Anchors
+    &__anchors {
+        position: absolute;
+        inset: -6px;
+        pointer-events: none;
+    }
+
+    &__anchor {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: $color-canvas-surface;
+        border: 2px solid $color-entity-border;
+        pointer-events: auto;
+        cursor: crosshair;
+        opacity: 0;
+        transition: opacity $motion-fast;
+
+        &--top    { top: 0;   left: 50%;  transform: translate(-50%, -50%); }
+        &--right  { top: 50%; right: 0;   transform: translate(50%, -50%); }
+        &--bottom { bottom: 0; left: 50%; transform: translate(-50%, 50%); }
+        &--left   { top: 50%; left: 0;    transform: translate(-50%, -50%); }
+    }
+
+    &:hover &__anchor,
+    &--selected &__anchor {
+        opacity: 1;
+    }
+}

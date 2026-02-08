@@ -1,0 +1,66 @@
+@use "@rayneforge/styles" as *;
+
+.rf-floating-search {
+  position: absolute;
+  bottom: $spacing-8;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 600px;
+  z-index: 1000;
+  padding: 0 $spacing-4;
+  
+  &__container {
+    background: rgba(21, 25, 33, 0.85); // $color-canvas-surface with opacity
+    backdrop-filter: blur(12px);
+    border: 1px solid $color-border-strong;
+    border-radius: $radius-full;
+    display: flex;
+    align-items: center;
+    padding: $spacing-3 $spacing-5;
+    box-shadow: $elevation-float;
+    transition: all $motion-normal $ease-standard;
+
+    &:hover {
+      border-color: $color-border-accent;
+    }
+
+    &:focus-within {
+      background: rgba(21, 25, 33, 0.95);
+      border-color: $color-accent-primary;
+      box-shadow: 0 0 0 1px $color-accent-primary, 0 0 30px rgba(0, 210, 255, 0.2);
+    }
+  }
+
+  &__icon {
+    font-size: $font-size-headline;
+    margin-right: $spacing-3;
+    color: $color-accent-primary;
+    display: flex;
+    align-items: center;
+  }
+
+  &__input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: $color-text-primary;
+    font-size: $font-size-body;
+    font-family: inherit;
+    outline: none;
+    min-width: 0;
+
+    &::placeholder {
+      color: $color-text-muted;
+    }
+  }
+
+  &__shortcut {
+    font-size: $font-size-meta;
+    color: $color-text-muted;
+    background: rgba(240, 246, 252, 0.1);
+    padding: 2px 6px;
+    border-radius: $radius-sm;
+    margin-left: $spacing-2;
+  }
+}

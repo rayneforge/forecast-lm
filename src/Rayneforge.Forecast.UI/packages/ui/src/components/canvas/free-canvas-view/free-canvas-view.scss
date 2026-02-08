@@ -1,0 +1,27 @@
+@use "@rayneforge/styles" as *;
+
+.rf-free-canvas {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background-color: $color-canvas-board;
+    cursor: default;
+
+    // Subtle dot grid
+    background-image: radial-gradient(circle, $canvas-grid-color 1px, transparent 1px);
+    background-size: $canvas-grid-size $canvas-grid-size;
+
+    &--panning {
+        cursor: move;
+    }
+
+    &__world {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 0;     // children are absolutely positioned
+        height: 0;
+        transform-origin: 0 0;
+        will-change: transform;
+    }
+}

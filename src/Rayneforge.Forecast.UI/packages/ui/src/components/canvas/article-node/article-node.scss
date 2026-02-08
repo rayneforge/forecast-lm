@@ -1,0 +1,106 @@
+@use "@rayneforge/styles" as *;
+
+.rf-article-node {
+    position: absolute;
+    width: 260px;
+    background: $color-canvas-surface;
+    border: 1px solid $color-border-subtle;
+    border-radius: $radius-md;
+    box-shadow: $elevation-1;
+    padding: $spacing-3;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    transition: box-shadow $motion-normal $ease-standard,
+                border-color $motion-normal $ease-standard;
+
+    &--selected {
+        border-color: $color-accent-primary;
+        box-shadow: $elevation-float;
+    }
+
+    &--dragging {
+        cursor: grabbing;
+        box-shadow: $elevation-node-drag;
+        transition: none;
+        z-index: 9999 !important;
+    }
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: $color-accent-primary;
+        border-radius: $radius-md $radius-md 0 0;
+        opacity: 0;
+        transition: opacity $motion-fast;
+    }
+
+    &--selected::before,
+    &:hover::before {
+        opacity: 1;
+    }
+
+    // Link-anchor dots
+    &__anchors {
+        position: absolute;
+        inset: -6px;
+        pointer-events: none;
+    }
+
+    &__anchor {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: $color-canvas-surface;
+        border: 2px solid $color-accent-primary;
+        pointer-events: auto;
+        cursor: crosshair;
+        opacity: 0;
+        transition: opacity $motion-fast;
+
+        &--top    { top: 0;   left: 50%;  transform: translate(-50%, -50%); }
+        &--right  { top: 50%; right: 0;   transform: translate(50%, -50%); }
+        &--bottom { bottom: 0; left: 50%; transform: translate(-50%, 50%); }
+        &--left   { top: 50%; left: 0;    transform: translate(-50%, -50%); }
+    }
+
+    &:hover &__anchor,
+    &--selected &__anchor {
+        opacity: 1;
+    }
+
+    &__meta {
+        font-size: $font-size-meta;
+        color: $color-text-muted;
+        display: flex;
+        gap: $spacing-2;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+        margin-bottom: $spacing-1;
+    }
+
+    &__title {
+        margin: 0;
+        font-size: $font-size-body;
+        font-weight: 600;
+        color: $color-text-primary;
+        line-height: $line-height-tight;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    &__tags {
+        display: flex;
+        gap: $spacing-1;
+        margin-top: $spacing-2;
+        flex-wrap: wrap;
+    }
+}

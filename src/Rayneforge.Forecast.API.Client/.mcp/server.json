@@ -1,0 +1,34 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "description": "MCP server for accessing News API",
+  "name": "io.github.rbro5.Rayneforge.Forecast.McpServer",
+  "version": "0.1.0-beta",
+  "packages": [
+    {
+      "registryType": "nuget",
+      "identifier": "Rayneforge.Forecast.McpServer",
+      "version": "0.1.0-beta",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [],
+      "environmentVariables": [
+        {
+          "name": "NEWS_API_KEY",
+          "value": "{news_api_key}",
+          "variables": {
+            "news_api_key": {
+               "description": "The API key for News API",
+               "isRequired": true,
+               "isSecret": true
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "repository": {
+    "url": "https://github.com/rbro5/Rayneforge.Forecast",
+    "source": "github"
+  }
+}

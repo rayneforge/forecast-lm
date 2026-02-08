@@ -1,0 +1,15 @@
+{
+  "name": "rayneforge-forecast-ui",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm -C apps/public-client dev",
+    "build": "pnpm -C apps/public-client build",
+    "test": "pnpm -r --filter ./packages/logic test",
+    "storybook": "pnpm -C apps/storybook storybook"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "vite": "^5.1.4",
+    "sass": "^1.71.1"
+  }
+}

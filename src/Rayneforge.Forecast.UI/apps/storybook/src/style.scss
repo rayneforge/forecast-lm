@@ -1,0 +1,7 @@
+@use "@rayneforge/styles" as *;
+
+// Just import styles to make them available to storybook
+body {
+    background-color: $color-canvas-default; 
+    font-family: $font-stack;
+}

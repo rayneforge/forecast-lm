@@ -1,0 +1,80 @@
+name: Deploy Infrastructure
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/Rayneforge.Forecast.AppHost/**'
+      - 'infra/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  AZURE_ENV_NAME: rayneforge-prod
+  AZURE_LOCATION: eastus2
+
+jobs:
+  generate-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x' 
+
+      - name: Install AZD
+        uses: Azure/setup-azd@v1.0.0
+
+      - name: Log in with Azure (Federated Credentials)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get Service Principal Object ID
+        id: get-sp-id
+        run: |
+          oid=$(az ad sp show --id ${{ env.AZURE_CLIENT_ID }} --query id --output tsv)
+          echo "oid=$oid" >> $GITHUB_OUTPUT
+
+      - name: Generate Bicep from AppHost
+        run: |
+          dotnet run --project src/Rayneforge.Forecast.AppHost/Rayneforge.Forecast.AppHost.csproj \
+          -- \
+          --publisher manifest \
+          --output-path infra/generated
+
+      - name: Provision Infrastructure (Aspire)
+        uses: azure/arm-deploy@v2
+        id: aspire-deploy
+        with:
+          scope: resourcegroup
+          resourceGroupName: rg-${{ env.AZURE_ENV_NAME }}
+          template: infra/generated/main.bicep
+          parameters: |
+            principalId=${{ steps.get-sp-id.outputs.oid }}
+            location=${{ env.AZURE_LOCATION }}
+
+      - name: Assign RBAC Roles
+        uses: azure/arm-deploy@v2
+        with:
+          scope: resourcegroup
+          resourceGroupName: rg-${{ env.AZURE_ENV_NAME }}
+          template: infra/azure/bicep/rbac.bicep
+          parameters: |
+            identityPrincipalId=${{ steps.aspire-deploy.outputs.identityPrincipalId }}
+            cosmosAccountId=${{ steps.aspire-deploy.outputs.cosmosAccountId }}
+            keyVaultId=${{ steps.aspire-deploy.outputs.keyVaultId }}
+            openAiAccountId=${{ steps.aspire-deploy.outputs.openAiAccountId }}
+            storageAccountId=${{ steps.aspire-deploy.outputs.storageAccountId }}
+            serviceBusNamespaceId=${{ steps.aspire-deploy.outputs.messagingNamespaceId }}

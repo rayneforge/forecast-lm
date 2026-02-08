@@ -1,0 +1,86 @@
+@use "@rayneforge/styles" as *;
+
+.rf-note-node {
+    position: absolute;
+    width: 220px;
+    background: $color-canvas-surface;
+    border: 1px solid $color-border-subtle;
+    border-left: 3px solid $color-node-note;
+    border-radius: $radius-md;
+    box-shadow: $elevation-1;
+    padding: $spacing-3;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    transition: box-shadow $motion-normal $ease-standard,
+                border-color $motion-normal $ease-standard;
+
+    &--selected {
+        border-color: $color-accent-primary;
+        border-left-color: $color-node-note;
+        box-shadow: $elevation-float;
+    }
+
+    &--dragging {
+        cursor: grabbing;
+        box-shadow: $elevation-node-drag;
+        transition: none;
+        z-index: 9999 !important;
+    }
+
+    &__title {
+        margin: 0 0 $spacing-2;
+        font-size: $font-size-body;
+        font-weight: 600;
+        color: $color-text-primary;
+        line-height: $line-height-tight;
+    }
+
+    &__body {
+        font-size: $font-size-meta;
+        color: $color-text-secondary;
+        line-height: $line-height-normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    &__timestamp {
+        margin-top: $spacing-2;
+        font-size: 10px;
+        color: $color-text-muted;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    // Anchors
+    &__anchors {
+        position: absolute;
+        inset: -6px;
+        pointer-events: none;
+    }
+
+    &__anchor {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: $color-canvas-surface;
+        border: 2px solid $color-node-note;
+        pointer-events: auto;
+        cursor: crosshair;
+        opacity: 0;
+        transition: opacity $motion-fast;
+
+        &--top    { top: 0;   left: 50%;  transform: translate(-50%, -50%); }
+        &--right  { top: 50%; right: 0;   transform: translate(50%, -50%); }
+        &--bottom { bottom: 0; left: 50%; transform: translate(-50%, 50%); }
+        &--left   { top: 50%; left: 0;    transform: translate(-50%, -50%); }
+    }
+
+    &:hover &__anchor,
+    &--selected &__anchor {
+        opacity: 1;
+    }
+}

@@ -1,0 +1,33 @@
+@use "@rayneforge/styles" as *;
+
+.rf-canvas-edges {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: visible;
+
+    &__path {
+        fill: none;
+        stroke: $color-border-accent;
+        stroke-width: 1.5;
+        transition: stroke $motion-fast;
+
+        &--link         { stroke: $color-accent-primary; }
+        &--group-bridge { stroke: $color-group-frame; stroke-dasharray: 6 4; }
+        &--relation     { stroke: $color-text-muted;  stroke-dasharray: 3 3; }
+
+        &:hover {
+            stroke-width: 2.5;
+            stroke: $color-accent-hover;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+    }
+
+    &__label {
+        fill: $color-text-muted;
+        font-size: 10px;
+        font-family: $font-stack;
+        text-anchor: middle;
+    }
+}

@@ -1,0 +1,11 @@
+@use "sass:map";
+@forward "design-tokens";
+
+@mixin card-base {
+  background: $color-canvas-surface;
+  border: 1px solid $color-border-subtle;
+  border-radius: 8px;
+  box-shadow: $elevation-1;
+  padding: 16px;
+  color: $color-text-primary;
+}

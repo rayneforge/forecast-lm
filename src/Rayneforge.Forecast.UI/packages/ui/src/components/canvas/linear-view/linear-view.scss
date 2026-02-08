@@ -1,0 +1,60 @@
+@use "@rayneforge/styles" as *;
+
+.rf-linear-view {
+    flex: 1;
+    overflow-y: auto;
+    padding: $spacing-6;
+    display: flex;
+    justify-content: center;
+
+    &__list {
+        width: 100%;
+        max-width: $layout-flow-max-width;
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 80px; // space for floating search
+    }
+
+    &__note-card {
+        background: $color-canvas-surface;
+        border: 1px solid $color-border-subtle;
+        border-left: 3px solid $color-node-note;
+        border-radius: $radius-md;
+        padding: $spacing-3 $spacing-4;
+        cursor: pointer;
+        max-width: $layout-flow-max-width;
+        transition: all $motion-fast $ease-standard;
+
+        &:hover {
+            border-color: $color-accent-primary;
+            border-left-color: $color-node-note;
+            box-shadow: $elevation-1;
+        }
+
+        &__header {
+            display: flex;
+            gap: $spacing-2;
+            align-items: flex-start;
+        }
+
+        &__icon {
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        &__title {
+            margin: 0;
+            font-size: $font-size-body;
+            font-weight: 600;
+            color: $color-text-primary;
+            line-height: $line-height-tight;
+        }
+
+        &__body {
+            margin-top: $spacing-2;
+            font-size: $font-size-meta;
+            color: $color-text-secondary;
+            line-height: $line-height-normal;
+        }
+    }
+}

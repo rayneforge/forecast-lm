@@ -1,0 +1,54 @@
+@use "@rayneforge/styles" as *;
+
+.rf-connector-band {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px; // Target 28-36px
+    position: relative;
+    color: $color-text-muted;
+    font-size: 11px;
+    margin: $spacing-2 0;
+
+    &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        height: 1px;
+        background-image: linear-gradient(to right, 
+            transparent 0%, 
+            $color-border-strong 20%, 
+            $color-border-strong 80%, 
+            transparent 100%
+        );
+        opacity: 0.3;
+        z-index: 0;
+    }
+
+    &--shared-topics::before {
+        border-top: 1px dotted $color-border-strong;
+        background: none;
+    }
+
+    &__content {
+        background-color: $color-canvas-default; // Match canvas to mask line
+        padding: 0 $spacing-3;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: $spacing-2;
+    }
+
+    &__label {
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 500;
+    }
+
+    &__chips {
+        display: flex;
+        gap: $spacing-1;
+    }
+}

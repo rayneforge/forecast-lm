@@ -1,0 +1,103 @@
+@use "@rayneforge/styles" as *;
+
+.rf-canvas-page {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: $color-canvas-default;
+    overflow: hidden;
+    position: relative;
+
+    &__toolbar {
+        display: flex;
+        align-items: center;
+        gap: $spacing-3;
+        padding: $spacing-2 $spacing-4;
+        background: rgba($color-canvas-surface, 0.85);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid $color-border-subtle;
+        z-index: 10;
+    }
+
+    &__view-switch {
+        display: flex;
+        gap: 2px;
+        background: rgba($color-border-subtle, 0.3);
+        border-radius: $radius-md;
+        padding: 2px;
+    }
+
+    &__view-btn {
+        all: unset;
+        cursor: pointer;
+        padding: $spacing-1 $spacing-3;
+        border-radius: calc(#{$radius-md} - 2px);
+        font-size: $font-size-meta;
+        color: $color-text-secondary;
+        transition: all $motion-fast $ease-standard;
+
+        &:hover {
+            color: $color-text-primary;
+            background: rgba($color-accent-primary, 0.08);
+        }
+
+        &--active {
+            background: rgba($color-accent-primary, 0.15);
+            color: $color-accent-primary;
+            font-weight: 600;
+        }
+    }
+
+    &__title {
+        margin: 0;
+        font-size: $font-size-body;
+        font-weight: 600;
+        color: $color-text-primary;
+        margin-right: auto;
+    }
+
+    &__add-btn {
+        all: unset;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: $spacing-1;
+        padding: $spacing-1 $spacing-3;
+        border-radius: $radius-md;
+        font-size: $font-size-meta;
+        color: $color-accent-primary;
+        border: 1px solid rgba($color-accent-primary, 0.3);
+        transition: all $motion-fast $ease-standard;
+
+        &:hover {
+            background: rgba($color-accent-primary, 0.1);
+            border-color: $color-accent-primary;
+        }
+    }
+
+    &__canvas-area {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+        position: relative;
+    }
+
+    // ── Render mode toggle group ──
+    &__render-toggle {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        margin-left: $spacing-2;
+        background: rgba($color-border-subtle, 0.3);
+        border-radius: $radius-md;
+        padding: 2px;
+    }
+
+    &__xr-badge {
+        font-size: 10px;
+        font-weight: 600;
+        color: $color-accent-primary;
+        padding: 2px $spacing-2;
+        opacity: 0.7;
+    }
+}

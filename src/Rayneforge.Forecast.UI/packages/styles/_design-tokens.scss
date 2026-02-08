@@ -1,0 +1,90 @@
+// 01 Foundations - Design Tokens
+// Theme: Animus / Dark Soft Matrix
+// Based on UI Design Specification v2
+
+// --- Color Tokens ---
+
+// Canvas - Deep, atmospheric backgrounds (Void & Glass)
+$color-canvas-default: #0B0E14; // Deepest void blue
+$color-canvas-surface: #151921; // Panel background
+$color-canvas-board:   #0F1218; // Workspace background
+
+// Borders - Technical, low contrast lines
+$color-border-subtle:  rgba(240, 246, 252, 0.1);
+$color-border-strong:  rgba(240, 246, 252, 0.2);
+$color-border-accent:  rgba(0, 210, 255, 0.3); // Animus Cyan
+
+// Text - High legibility on dark
+$color-text-primary:   #E6EDF3;
+$color-text-secondary: #8B949E;
+$color-text-muted:     #484F58;
+$color-text-inverse:   #0B0E14;
+
+// Accent - The "Soft Matrix" energy
+$color-accent-primary: #00D2FF; // Electric Cyan
+$color-accent-soft:    rgba(0, 210, 255, 0.1);
+$color-accent-hover:   #58A6FF;
+
+// Semantic - Desaturated to maintain dark focus
+$color-success: #238636;
+$color-warning: #D29922; // Historical Gold (Odyssey vibe)
+$color-error:   #F85149;
+$color-neutral-tag: rgba(110, 118, 129, 0.2);
+
+// --- Spacing Tokens (4px grid) ---
+$spacing-1: 4px;
+$spacing-2: 8px;
+$spacing-3: 12px;
+$spacing-4: 16px;
+$spacing-5: 20px;
+$spacing-6: 24px;
+$spacing-8: 32px;
+$spacing-10: 40px;
+$spacing-12: 48px;
+
+// --- Radius Tokens ---
+$radius-sm: 6px;
+$radius-md: 10px;
+$radius-lg: 14px;
+$radius-xl: 18px;
+$radius-full: 9999px;
+
+// --- Elevation Tokens ---
+// Updated for Dark Mode: Reliance on subtle borders and glow rather than drop shadows
+$elevation-1: 0 1px 0 rgba(240, 246, 252, 0.1), 0 2px 4px rgba(0,0,0,0.4);
+$elevation-2: 0 0 0 1px rgba(240, 246, 252, 0.1), 0 8px 24px rgba(0,0,0,0.4);
+$elevation-float: 0 0 0 1px #00D2FF, 0 0 20px rgba(0, 210, 255, 0.15); // Holographic lift
+
+
+// --- Typography Tokens ---
+$font-stack: 'Inter', system-ui, -apple-system, sans-serif;
+
+$font-size-meta: 12px;
+$font-size-body: 14px;
+$font-size-headline: 16px;
+$font-size-title: 20px;
+
+$line-height-tight: 1.3;
+$line-height-normal: 1.45;
+
+// --- Layout Tokens ---
+$layout-topbar-height: 64px;
+$layout-lens-width: 260px;
+$layout-flow-max-width: 880px;
+$layout-pins-width: 320px;
+
+// --- Motion Tokens ---
+$motion-fast: 120ms;
+$motion-normal: 180ms;
+$motion-slow: 240ms;
+$ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+// --- Canvas / Node Tokens ---
+$color-node-note:      #D29922;                   // Gold left-border for notes
+$color-topic-bubble:   rgba(0, 210, 255, 0.08);   // Faint cyan bubble fill
+$color-group-frame:    rgba(0, 210, 255, 0.25);   // Dashed group boundary
+$elevation-node-drag:  0 12px 28px rgba(0,0,0,0.5), 0 0 0 1px #00D2FF;
+$motion-drag:          0ms;                        // No transition during drag (60fps)
+$canvas-grid-size:     24px;                       // Snap grid quantum
+$canvas-grid-color:    rgba(240, 246, 252, 0.03);  // Subtle dot-grid
+

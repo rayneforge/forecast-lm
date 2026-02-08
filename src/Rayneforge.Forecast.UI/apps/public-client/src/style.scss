@@ -1,0 +1,92 @@
+@use "@rayneforge/styles" as *;
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  font-family: $font-stack; /* Updated from $font-body which didn't exist in tokens */
+  background-color: $color-canvas-default; /* Updated from $color-background */
+  color: $color-text-primary; /* Updated from $color-text */
+}
+
+.rf-app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: $color-canvas-default;
+}
+
+.rf-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    position: relative; /* For floating elements context */
+}
+
+.rf-feed {
+    flex: 1;
+    overflow-y: auto;
+    padding: $spacing-6; /* Updated to token */
+
+    &__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: $spacing-6;
+        padding-bottom: 80px; /* Space for floating search */
+    }
+}
+
+.rf-loading, .rf-error {
+    padding: $spacing-12;
+    text-align: center;
+    color: $color-text-muted;
+}
+
+.rf-error {
+    color: $color-error; 
+}
+
+// ─── Workspace page ─────────────────────────────────────────────
+
+.rf-workspace-page {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+
+    &__nav {
+        display: flex;
+        align-items: center;
+        gap: $spacing-4;
+        padding: $spacing-2 $spacing-4;
+        background: $color-canvas-surface;
+        border-bottom: 1px solid $color-border-subtle;
+        flex-shrink: 0;
+    }
+
+    &__back {
+        background: none;
+        border: 1px solid $color-border-subtle;
+        color: $color-accent-primary;
+        padding: $spacing-1 $spacing-3;
+        border-radius: $radius-md;
+        cursor: pointer;
+        font-size: $font-size-body;
+
+        &:hover {
+            background: $color-canvas-default;
+        }
+    }
+
+    &__title {
+        margin: 0;
+        font-size: $font-size-title;
+        color: $color-text-primary;
+        font-weight: 600;
+    }
+
+    &__canvas {
+        flex: 1;
+        overflow: hidden;
+    }
+}

@@ -1,0 +1,6 @@
+@Rayneforge.Forecast.ManagementAPI_HostAddress = http://localhost:5207
+
+GET {{Rayneforge.Forecast.ManagementAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,197 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "News API",
+    "description": "Locate articles and breaking news headlines from news sources and blogs across the web",
+    "version": "v2"
+  },
+  "servers": [
+    {
+      "url": "https://newsapi.org/v2"
+    }
+  ],
+  "paths": {
+    "/everything": {
+      "get": {
+        "operationId": "getEverything",
+        "summary": "Search through millions of articles from over 30,000 large and small news sources and blogs.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Keywords or phrases to search for in the article title and body.",
+            "schema": {
+              "type": "string",
+              "example": "Apple"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "A date and optional time for the oldest article allowed.",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-02-07"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "The order to sort the articles in.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "relevancy",
+                "popularity",
+                "publishedAt"
+              ],
+              "example": "popularity"
+            }
+          },
+          {
+            "name": "apiKey",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of articles indicating the total results found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NewsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/top-headlines": {
+      "get": {
+        "operationId": "getTopHeadlines",
+        "summary": "This endpoint provides live top and breaking headlines for a country, specific category in a country, single source, or multiple sources.",
+        "parameters": [
+          {
+            "name": "country",
+            "in": "query",
+            "description": "The 2-letter ISO 3166-1 code of the country you want to get headlines for.",
+            "schema": {
+              "type": "string",
+              "example": "us"
+            }
+          },
+          {
+            "name": "sources",
+            "in": "query",
+            "description": "A comma-seperated string of identifiers for the news sources or blogs you want headlines from.",
+            "schema": {
+              "type": "string",
+              "example": "bbc-news"
+            }
+          },
+          {
+            "name": "apiKey",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of top headlines.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NewsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "NewsResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          },
+          "totalResults": {
+            "type": "integer",
+            "example": 33
+          },
+          "articles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Article"
+            }
+          }
+        }
+      },
+      "Article": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "nullable": true,
+                "example": "the-washington-post"
+              },
+              "name": {
+                "type": "string",
+                "example": "The Washington Post"
+              }
+            }
+          },
+          "author": {
+            "type": "string",
+            "nullable": true,
+            "example": "Todd C. Frankel"
+          },
+          "title": {
+            "type": "string",
+            "example": "Stock market hits all-time high as Dow closes above 50,000 - The Washington Post"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "The Dow Jones Industrial Average finished at a record 50,115.67 on Friday, rising more than 1,200 points for the day."
+          },
+          "url": {
+            "type": "string",
+            "example": "https://www.washingtonpost.com/business/2026/02/06/stock-market-hits-all-time-high-dow-closes-above-50000/"
+          },
+          "urlToImage": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://www.washingtonpost.com/wp-apps/imrs.php?src=https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/BHQZPGEWH4IBNVC6FBQLKQI7VA_size-normalized.jpg&w=1440"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-02-07T04:28:36Z"
+          },
+          "content": {
+            "type": "string",
+            "nullable": true,
+            "example": "The U.S. stock market ended a bumpy week with a bang, as the Dow Jones Industrial Average closed above 50,000 for the first time.\r\nThe Dow crossed the threshold an important psychological barrier ear… [+74 chars]"
+          }
+        }
+      }
+    }
+  }
+}
