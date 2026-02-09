@@ -1,0 +1,6 @@
+name: Rayneforge.Forecast
+services:
+  app:
+    project: src/Rayneforge.Forecast.AppHost/Rayneforge.Forecast.AppHost.csproj
+    language: dotnet
+    host: containerapp

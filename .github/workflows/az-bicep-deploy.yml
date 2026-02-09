@@ -31,8 +31,8 @@ jobs:
         with:
           dotnet-version: '9.0.x' 
 
-      # - name: Install AZD
-      #   uses: Azure/setup-azd@v2.0.0
+      - name: Install AZD
+        uses: Azure/setup-azd@v2.0.0
 
       - name: Log in with Azure (Federated Credentials)
         uses: azure/login@v2
@@ -47,12 +47,11 @@ jobs:
           oid=$(az ad sp show --id ${{ env.AZURE_CLIENT_ID }} --query id --output tsv)
           echo "oid=$oid" >> $GITHUB_OUTPUT
 
-      - name: Generate Bicep from AppHost
+      - name: Generate Bicep (AZD Synth)
         run: |
-          dotnet run --project src/Rayneforge.Forecast.AppHost/Rayneforge.Forecast.AppHost.csproj \
-          -- \
-          --publisher manifest \
-          --output-path infra/generated
+          azd config set alpha.infraSynth on
+          azd infra synth
+          ls -R infra/
 
       - name: Create Resource Group
         run: az group create --name rg-${{ env.AZURE_ENV_NAME }} --location ${{ env.AZURE_LOCATION }}
@@ -63,7 +62,7 @@ jobs:
         with:
           scope: resourcegroup
           resourceGroupName: rg-${{ env.AZURE_ENV_NAME }}
-          template: infra/generated/main.bicep
+          template: infra/main.bicep
           parameters: |
             principalId=${{ steps.get-sp-id.outputs.oid }}
             location=${{ env.AZURE_LOCATION }}

@@ -374,13 +374,71 @@ if (-not $GitHubRepo) {
   $manualSteps += '- Re-run with -GitHubRepo "org/repo" to auto-create the federated credential for GitHub Actions OIDC.'
 }
 
+# ------------------- DEPLOYMENT IDENTITY SETUP (HOME TENANT) -------------------
+# Create the separate Service Principal that GitHub Actions will use to deploy Azure resources
+# This lives in the HOME tenant (where the subscription is), NOT the CIAM tenant.
+
+$deploySpResult = $null
+if ($GitHubRepo) {
+  Write-Host "Configuring GitHub Actions Deployment Identity in Subscription Tenant..." -ForegroundColor Cyan
+  
+  # Switch detailed error output off for az checks to avoid noise
+  $deployAppName = "github-actions-deploy-$(($GitHubRepo -split '/')[1].ToLower())"
+  $subTenantId = (az account show --query tenantId -o tsv).Trim()
+
+  # 1. Ensure App (Home Tenant)
+  $existingApp = az ad app list --display-name $deployAppName --output json | ConvertFrom-Json | Select-Object -First 1
+  if (-not $existingApp) {
+    $existingApp = az ad app create --display-name $deployAppName --output json | ConvertFrom-Json
+  }
+  
+  # 2. Ensure SP (Home Tenant)
+  $deploySp = az ad sp show --id $existingApp.appId --output json 2>$null | ConvertFrom-Json
+  if (-not $deploySp) {
+    $deploySp = az ad sp create --id $existingApp.appId --output json | ConvertFrom-Json
+  }
+
+  # 3. Assign Roles (Contributor & UAA)
+  # Idempotent (az handles 'already exists')
+  az role assignment create --assignee $deploySp.id --role "Contributor" --scope "/subscriptions/$SubscriptionId" --output none 2>$null
+  az role assignment create --assignee $deploySp.id --role "User Access Administrator" --scope "/subscriptions/$SubscriptionId" --output none 2>$null
+
+  # 4. Federation (OIDC)
+  $fedName = "github-actions"
+  $feds = az ad app federated-credential list --id $existingApp.appId --output json | ConvertFrom-Json
+  if (-not ($feds | Where-Object name -eq $fedName)) {
+    $fedBody = @{
+        name = $fedName
+        issuer = "https://token.actions.githubusercontent.com"
+        subject = "repo:${GitHubRepo}:ref:refs/heads/${GitHubBranch}"
+        audiences = @("api://AzureADTokenExchange")
+        description = "GitHub Actions Deployment"
+    }
+    # Use temp file to avoid parsing issues
+    $fedFile = [System.IO.Path]::GetTempFileName()
+    $fedBody | ConvertTo-Json -Compress | Set-Content $fedFile
+    az ad app federated-credential create --id $existingApp.appId --parameters "@$fedFile" --output none
+    Remove-Item $fedFile
+  }
+
+  $deploySpResult = [pscustomobject]@{
+    appName = $deployAppName
+    clientId = $existingApp.appId
+    tenantId = $subTenantId
+    subscriptionId = $SubscriptionId
+  }
+}
+
 # ─── Output ──────────────────────────────────────────────────────
 $result = [pscustomobject]@{
   # ── GitHub Actions Secrets (copy these into your repo settings) ──
   githubSecrets = [pscustomobject]@{
-    AZURE_CLIENT_ID       = $app.appId                   # App Registration → Application (client) ID
-    AZURE_TENANT_ID       = $externalTenantId             # CIAM tenant ID
-    AZURE_SUBSCRIPTION_ID = $SubscriptionId               # Azure subscription
+    AZURE_CLIENT_ID       = if ($deploySpResult) { $deploySpResult.clientId } else { "Run with -GitHubRepo to generate" }
+    AZURE_TENANT_ID       = if ($deploySpResult) { $deploySpResult.tenantId } else { "Run with -GitHubRepo to generate" }
+    AZURE_SUBSCRIPTION_ID = $SubscriptionId
+    # Legacy/CIAM-specific secrets (if needed for app config)
+    CIAM_CLIENT_ID        = $app.appId
+    CIAM_TENANT_ID        = $externalTenantId
   }
   # ── Full resource details ──
   ciam = [pscustomobject]@{
@@ -415,12 +473,21 @@ $result = [pscustomobject]@{
 
 $result | ConvertTo-Json -Depth 10
 
-# -- Print a quick-copy block to stderr so it doesn't pollute JSON stdout --
-Write-Host ''
-Write-Host '+--------------------------------------------------------------+' -ForegroundColor Cyan
-Write-Host '|  GitHub Actions Secrets -- copy into repo Settings > Secrets |' -ForegroundColor Cyan
-Write-Host '+--------------------------------------------------------------+' -ForegroundColor Cyan
-Write-Host "|  AZURE_CLIENT_ID       = $($app.appId)" -ForegroundColor Yellow
-Write-Host "|  AZURE_TENANT_ID       = $externalTenantId" -ForegroundColor Yellow
-Write-Host "|  AZURE_SUBSCRIPTION_ID = $SubscriptionId" -ForegroundColor Yellow
-Write-Host '+--------------------------------------------------------------+' -ForegroundColor Cyan
+if ($deploySpResult) {
+  Write-Host "+--------------------------------------------------------------+" -ForegroundColor Cyan
+  Write-Host "|  GitHub Actions Secrets -- copy into repo Settings > Secrets |" -ForegroundColor Cyan
+  Write-Host "+--------------------------------------------------------------+" -ForegroundColor Cyan
+  Write-Host "|  AZURE_CLIENT_ID       = $($deploySpResult.clientId)" -ForegroundColor Yellow
+  Write-Host "|  AZURE_TENANT_ID       = $($deploySpResult.tenantId)" -ForegroundColor Yellow
+  Write-Host "|  AZURE_SUBSCRIPTION_ID = $($deploySpResult.subscriptionId)" -ForegroundColor Yellow
+  Write-Host "+--------------------------------------------------------------+" -ForegroundColor Cyan
+  Write-Host ""
+}
+
+Write-Host "+--------------------------------------------------------------+" -ForegroundColor Cyan
+Write-Host "|  CIAM Config -- use in src/appsettings.json                  |" -ForegroundColor Cyan
+Write-Host "+--------------------------------------------------------------+" -ForegroundColor Cyan
+Write-Host "|  ClientId              = $($app.appId)" -ForegroundColor Green
+Write-Host "|  TenantId              = $externalTenantId" -ForegroundColor Green
+Write-Host "|  Domain                = $domainName" -ForegroundColor Green
+Write-Host "+--------------------------------------------------------------+" -ForegroundColor Cyan
