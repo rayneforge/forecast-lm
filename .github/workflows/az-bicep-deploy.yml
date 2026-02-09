@@ -54,6 +54,9 @@ jobs:
           --publisher manifest \
           --output-path infra/generated
 
+      - name: Create Resource Group
+        run: az group create --name rg-${{ env.AZURE_ENV_NAME }} --location ${{ env.AZURE_LOCATION }}
+
       - name: Provision Infrastructure (Aspire)
         uses: azure/arm-deploy@v2
         id: aspire-deploy
