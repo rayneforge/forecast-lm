@@ -31,9 +31,6 @@ jobs:
         with:
           dotnet-version: '9.0.x' 
 
-      - name: Install AZD
-        uses: Azure/setup-azd@v1.0.0
-
       - name: Log in with Azure (Federated Credentials)
         uses: azure/login@v2
         with:
@@ -46,12 +43,6 @@ jobs:
         run: |
           oid=$(az ad sp show --id ${{ env.AZURE_CLIENT_ID }} --query id --output tsv)
           echo "oid=$oid" >> $GITHUB_OUTPUT
-
-      - name: Generate Bicep (AZD Synth)
-        run: |
-          azd config set alpha.infraSynth on
-          azd infra synth
-          ls -R infra/
 
       - name: Create Resource Group
         run: az group create --name rg-${{ env.AZURE_ENV_NAME }} --location ${{ env.AZURE_LOCATION }}
