@@ -101,18 +101,27 @@ function Invoke-ArmJson([string] $Method, [string] $Uri, [object] $Body = $null)
   $token = Get-AzAccessToken -Resource 'https://management.azure.com/'
   $headers = @{ Authorization = "Bearer $token"; 'Content-Type' = 'application/json' }
   if ($Body) {
-    return Invoke-WebRequest -Method $Method -Uri $Uri -Headers $headers -Body ($Body | ConvertTo-Json -Depth 20)
+    return Invoke-WebRequest -Method $Method -Uri $Uri -Headers $headers -Body ($Body | ConvertTo-Json -Depth 20) -UseBasicParsing
   }
-  return Invoke-WebRequest -Method $Method -Uri $Uri -Headers $headers
+  return Invoke-WebRequest -Method $Method -Uri $Uri -Headers $headers -UseBasicParsing
 }
 
 function Invoke-GraphJson([string] $Method, [string] $Uri, [string] $TenantId, [object] $Body = $null) {
   $token = Get-AzAccessToken -Resource 'https://graph.microsoft.com' -TenantId $TenantId
   $headers = @{ Authorization = "Bearer $token"; 'Content-Type' = 'application/json' }
-  if ($Body) {
-    return Invoke-RestMethod -Method $Method -Uri $Uri -Headers $headers -Body ($Body | ConvertTo-Json -Depth 20)
+  try {
+    if ($Body) {
+      return Invoke-RestMethod -Method $Method -Uri $Uri -Headers $headers -Body ($Body | ConvertTo-Json -Depth 20)
+    }
+    return Invoke-RestMethod -Method $Method -Uri $Uri -Headers $headers
+  } catch {
+    $stream = $_.Exception.Response.GetResponseStream()
+    if ($stream) {
+      $reader = [System.IO.StreamReader]::new($stream)
+      Write-Error "Graph API Error: $($reader.ReadToEnd())"
+    }
+    throw
   }
-  return Invoke-RestMethod -Method $Method -Uri $Uri -Headers $headers
 }
 
 function Ensure-CiamTenant {
@@ -127,11 +136,11 @@ function Ensure-CiamTenant {
 
   $apiVersion = '2023-05-17-preview'
   $resourceId = "/subscriptions/$SubId/resourceGroups/$RgName/providers/Microsoft.AzureActiveDirectory/ciamDirectories/$ResourceName"
-  $uri = "https://management.azure.com$resourceId?api-version=$apiVersion"
+  $uri = "https://management.azure.com${resourceId}?api-version=$apiVersion"
 
   $body = @{
     location = $Location
-    sku = @{ name = 'Standard'; tier = 'A0' }
+    sku = @{ name = 'Base'; tier = 'A0' }
     properties = @{
       createTenantProperties = @{
         displayName = $DisplayName
@@ -271,12 +280,17 @@ function Ensure-SignUpSignInUserFlow {
     # not found -> create
   }
 
-  $created = Invoke-GraphJson -Method Post -Uri "https://graph.microsoft.com/beta/identity/b2cUserFlows" -TenantId $TenantId -Body @{
-    id = $desiredId
-    userFlowType = "signUpOrSignIn"
-    userFlowTypeVersion = 3
+  try {
+    $created = Invoke-GraphJson -Method Post -Uri "https://graph.microsoft.com/beta/identity/b2cUserFlows" -TenantId $TenantId -Body @{
+      id = $desiredId
+      userFlowType = "signUpOrSignIn"
+      userFlowTypeVersion = 3
+    }
+    return $created
+  } catch {
+    Write-Warning "Failed to create User Flow '$desiredId'. You may lack 'IdentityUserFlow.ReadWrite.All' permission. Please create it manually."
+    return [pscustomobject]@{ id = $desiredId; userFlowType = "signUpOrSignIn"; userFlowTypeVersion = 3 }
   }
-  return $created
 }
 
 # ------------------- MAIN -------------------
@@ -401,12 +415,12 @@ $result = [pscustomobject]@{
 
 $result | ConvertTo-Json -Depth 10
 
-# ── Print a quick-copy block to stderr so it doesn't pollute JSON stdout ──
+# -- Print a quick-copy block to stderr so it doesn't pollute JSON stdout --
 Write-Host ''
-Write-Host '╔══════════════════════════════════════════════════════════════╗' -ForegroundColor Cyan
-Write-Host '║  GitHub Actions Secrets — copy into repo Settings > Secrets ║' -ForegroundColor Cyan
-Write-Host '╠══════════════════════════════════════════════════════════════╣' -ForegroundColor Cyan
-Write-Host "║  AZURE_CLIENT_ID       = $($app.appId)" -ForegroundColor Yellow
-Write-Host "║  AZURE_TENANT_ID       = $externalTenantId" -ForegroundColor Yellow
-Write-Host "║  AZURE_SUBSCRIPTION_ID = $SubscriptionId" -ForegroundColor Yellow
-Write-Host '╚══════════════════════════════════════════════════════════════╝' -ForegroundColor Cyan
+Write-Host '+--------------------------------------------------------------+' -ForegroundColor Cyan
+Write-Host '|  GitHub Actions Secrets -- copy into repo Settings > Secrets |' -ForegroundColor Cyan
+Write-Host '+--------------------------------------------------------------+' -ForegroundColor Cyan
+Write-Host "|  AZURE_CLIENT_ID       = $($app.appId)" -ForegroundColor Yellow
+Write-Host "|  AZURE_TENANT_ID       = $externalTenantId" -ForegroundColor Yellow
+Write-Host "|  AZURE_SUBSCRIPTION_ID = $SubscriptionId" -ForegroundColor Yellow
+Write-Host '+--------------------------------------------------------------+' -ForegroundColor Cyan
