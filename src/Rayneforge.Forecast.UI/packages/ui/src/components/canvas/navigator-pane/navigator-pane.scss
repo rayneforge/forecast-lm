@@ -1,0 +1,193 @@
+@use "@rayneforge/styles" as *;
+
+$pane-width: 300px;
+
+.rf-navigator-pane {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 0;
+    overflow: hidden;
+    background: rgba($color-canvas-surface, 0.92);
+    backdrop-filter: blur(16px);
+    border-left: 1px solid $color-border-subtle;
+    display: flex;
+    flex-direction: column;
+    z-index: 20;
+    transition: width $motion-normal $ease-standard;
+
+    &--open {
+        width: $pane-width;
+    }
+
+    // ── Collapse toggle ──
+    &__toggle {
+        all: unset;
+        cursor: pointer;
+        position: absolute;
+        left: -28px;
+        top: 50%;
+        translate: 0 -50%;
+        width: 28px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba($color-canvas-surface, 0.85);
+        border: 1px solid $color-border-subtle;
+        border-right: none;
+        border-radius: $radius-sm 0 0 $radius-sm;
+        font-size: 16px;
+        color: $color-text-secondary;
+        transition: color $motion-fast $ease-standard;
+
+        &:hover {
+            color: $color-accent-primary;
+        }
+    }
+
+    // ── Header ──
+    &__header {
+        display: flex;
+        align-items: center;
+        gap: $spacing-2;
+        padding: $spacing-3 $spacing-4;
+        border-bottom: 1px solid $color-border-subtle;
+        flex-shrink: 0;
+    }
+
+    &__title {
+        margin: 0;
+        font-size: $font-size-body;
+        font-weight: 600;
+        color: $color-text-primary;
+    }
+
+    &__count {
+        background: rgba($color-accent-primary, 0.15);
+        color: $color-accent-primary;
+        font-size: $font-size-meta;
+        font-weight: 600;
+        padding: 1px $spacing-2;
+        border-radius: $radius-full;
+    }
+
+    // ── Scrollable list ──
+    &__list {
+        flex: 1;
+        overflow-y: auto;
+        padding: $spacing-2 0;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(240, 246, 252, 0.1) transparent;
+    }
+
+    // ── Workspace section ──
+    &__section {
+        margin-bottom: $spacing-2;
+    }
+
+    &__section-label {
+        display: flex;
+        align-items: center;
+        gap: $spacing-2;
+        padding: $spacing-2 $spacing-4;
+        font-size: $font-size-meta;
+        font-weight: 700;
+        color: $color-text-secondary;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        border-left: 3px solid $color-accent-primary;
+    }
+
+    &__section-count {
+        font-weight: 600;
+        color: $color-text-muted;
+        font-size: 10px;
+        background: rgba(240, 246, 252, 0.08);
+        padding: 0 $spacing-1;
+        border-radius: $radius-sm;
+    }
+
+    // ── Empty states ──
+    &__empty {
+        padding: $spacing-6 $spacing-4;
+        text-align: center;
+        color: $color-text-muted;
+        font-size: $font-size-body;
+    }
+
+    &__empty-ws {
+        padding: $spacing-2 $spacing-4 $spacing-2 ($spacing-4 + 16px);
+        font-size: $font-size-meta;
+        color: $color-text-muted;
+        font-style: italic;
+    }
+
+    // ── Node row ──
+    &__node {
+        all: unset;
+        cursor: pointer;
+        display: flex;
+        align-items: flex-start;
+        gap: $spacing-2;
+        width: 100%;
+        padding: $spacing-2 $spacing-4;
+        box-sizing: border-box;
+        font-size: $font-size-meta;
+        color: $color-text-secondary;
+        transition: background $motion-fast;
+
+        &:hover {
+            background: rgba($color-accent-primary, 0.06);
+            color: $color-text-primary;
+        }
+
+        &--selected {
+            background: rgba($color-accent-primary, 0.1);
+            color: $color-accent-primary;
+        }
+    }
+
+    &__node-icon {
+        flex-shrink: 0;
+        width: 18px;
+        text-align: center;
+        font-size: 12px;
+        margin-top: 2px;
+    }
+
+    &__node-text {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    &__node-label {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        line-height: 1.3;
+    }
+
+    &__node-sub {
+        font-size: 10px;
+        color: $color-text-muted;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        line-height: 1.2;
+    }
+
+    &__node-type {
+        flex-shrink: 0;
+        font-size: 10px;
+        color: $color-text-muted;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+}

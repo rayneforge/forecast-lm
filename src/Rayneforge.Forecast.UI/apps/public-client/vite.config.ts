@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon-192.png', 'icon-512.png'],
       manifest: {
-        name: 'Forecast',
-        short_name: 'Forecast',
+        name: 'Forecast LM',
+        short_name: 'Forecast LM',
         description: 'Spatial news intelligence — canvas, narrative analysis, and XR visualization',
         display: 'standalone',
         background_color: '#0B0E14',

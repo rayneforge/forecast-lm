@@ -15,6 +15,10 @@ public class EntitiesController(
     ISemanticRepository<NewsArticle> articleRepository,
     IEmbeddingsProvider embeddingsProvider) : ControllerBase
 {
+    [HttpGet("schema")]
+    [AllowAnonymous]
+    public ActionResult<EntitySchema> GetSchema() => Ok(Entity.GetSchema());
+
     [HttpGet]
     [EnableQuery]
     public async Task<IQueryable<Entity>> Get()

@@ -1,27 +1,48 @@
 import React from 'react';
-import { NewsArticle } from '@rayneforge/logic';
+import { NewsArticle, EntitySchema } from '@rayneforge/logic';
 import { TopBar } from '../components/top-bar/TopBar';
 import { LensPanel, FilterSection } from '../components/lens-panel/LensPanel';
 import { PinnedBoard, PinnedBoardProps } from '../components/pinned-board/PinnedBoard';
 import { NewsCard } from '../components/news-card/NewsCard';
+import { useEntitySchema } from '../hooks/useEntitySchema';
 
 export interface NewsFeedPageProps {
     articles: NewsArticle[];
     pinnedItems: PinnedBoardProps['items'];
-    filters: FilterSection[];
     isLensOpen: boolean;
     onToggleLens: () => void;
     onSearch: (query: string) => void;
+
+    /**
+     * When provided, the LensPanel is driven by these explicit filters
+     * (backward-compatible). When omitted, the page fetches the
+     * NewsArticle schema and auto-generates them.
+     */
+    filters?: FilterSection[];
+
+    /**
+     * Async function that returns the entity schema for auto-filter mode.
+     * Typically: `() => client.getNewsSchema()`
+     */
+    schemaFetcher?: () => Promise<EntitySchema>;
 }
 
 export const NewsFeedPage: React.FC<NewsFeedPageProps> = ({
     articles,
     pinnedItems,
-    filters,
+    filters: explicitFilters,
+    schemaFetcher,
     isLensOpen,
     onToggleLens,
     onSearch
 }) => {
+    // If no explicit filters AND a schema fetcher is provided, auto-generate.
+    const { filters: schemaFilters } = useEntitySchema({
+        fetcher: schemaFetcher ?? (() => Promise.resolve({ entity: '', properties: [] })),
+    });
+
+    const filters = explicitFilters ?? schemaFilters;
+
     return (
         <div className="rf-app-layout" style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100%' }}>
             <TopBar onSearch={onSearch} />

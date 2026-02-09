@@ -7,13 +7,13 @@ using Rayneforge.Forecast.Infrastructure.Data;
 
 /// <summary>
 /// Cosmos DB implementation of <see cref="IChatDbProvider"/>.
-/// Backed by <see cref="CosmosConversationDbContext"/>.
+/// Backed by <see cref="CosmosUserDbContext"/>.
 /// </summary>
 public sealed class CosmosChatDbProvider : IChatDbProvider
 {
-    private readonly CosmosConversationDbContext _db;
+    private readonly CosmosUserDbContext _db;
 
-    public CosmosChatDbProvider(CosmosConversationDbContext db)
+    public CosmosChatDbProvider(CosmosUserDbContext db)
     {
         _db = db;
     }

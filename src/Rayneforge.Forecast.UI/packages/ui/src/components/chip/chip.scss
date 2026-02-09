@@ -41,4 +41,15 @@
         color: $color-text-primary;
         box-shadow: $elevation-1;
     }
+
+    &--clickable {
+        cursor: pointer;
+        transition: background-color 120ms ease, border-color 120ms ease;
+
+        &:hover {
+            background-color: $color-accent-soft;
+            border-color: $color-accent-primary;
+            color: $color-accent-primary;
+        }
+    }
 }

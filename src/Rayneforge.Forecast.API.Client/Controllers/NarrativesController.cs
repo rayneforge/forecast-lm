@@ -16,6 +16,10 @@ public class NarrativesController(
     ISemanticRepository<Entity> entityRepository,
     IEmbeddingsProvider embeddingsProvider) : ControllerBase
 {
+    [HttpGet("schema")]
+    [AllowAnonymous]
+    public ActionResult<EntitySchema> GetSchema() => Ok(Narrative.GetSchema());
+
     [HttpGet]
     [EnableQuery]
     public async Task<IQueryable<Narrative>> Get()

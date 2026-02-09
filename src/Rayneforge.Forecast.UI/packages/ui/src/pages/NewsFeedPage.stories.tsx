@@ -32,7 +32,7 @@ const meta: Meta<typeof NewsFeedPage> = {
             }
         ],
         pinnedItems: [
-            { group: 'Watchlist', item: { article: { ...mockArticle, title: "Competitor Earnings" }, note: "Releases tomorrow" } }
+            { group: 'Watchlist', item: { id: '1', title: 'Competitor Earnings', subtitle: 'Financial Times', itemType: 'Article', note: 'Releases tomorrow' } }
         ]
     }
 };

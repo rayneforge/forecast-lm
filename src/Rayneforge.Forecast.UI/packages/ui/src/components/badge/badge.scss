@@ -1,0 +1,40 @@
+@use "@rayneforge/styles" as *;
+
+.rf-badge {
+    display: inline-flex;
+    align-items: center;
+    height: 26px;
+    padding: 0 $spacing-4;
+    border-radius: $radius-full;
+    font-family: $font-stack;
+    font-size: $font-size-meta;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    border: 1px solid transparent;
+
+    &--accent {
+        color: $color-accent-primary;
+        background: $color-accent-soft;
+        border-color: $color-border-accent;
+    }
+
+    &--neutral {
+        color: $color-text-secondary;
+        background: $color-neutral-tag;
+        border-color: $color-border-subtle;
+    }
+
+    &--success {
+        color: $color-success;
+        background: rgba($color-success, 0.1);
+        border-color: rgba($color-success, 0.3);
+    }
+
+    &--warning {
+        color: $color-warning;
+        background: rgba($color-warning, 0.1);
+        border-color: rgba($color-warning, 0.3);
+    }
+}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { CanvasEdge, CanvasNode, ChainGroup, Vector3 } from '../../../canvas/CanvasTypes';
+import { getNodeBounds } from '../../../canvas/physics/nodeBounds';
 import './canvas-edge.scss';
 
 interface CanvasEdgesProps {
@@ -10,8 +11,7 @@ interface CanvasEdgesProps {
 
 /** Centre of a node's visual rect (2D projection) */
 function getCenter(node: CanvasNode): Vector3 {
-    const w = node.type === 'article' ? 260 : node.type === 'note' ? 220 : 80;
-    const h = node.type === 'topic' ? 36 : 90;
+    const { width: w, height: h } = getNodeBounds(node.type);
     return { x: node.position.x + w / 2, y: node.position.y + h / 2, z: node.position.z };
 }
 

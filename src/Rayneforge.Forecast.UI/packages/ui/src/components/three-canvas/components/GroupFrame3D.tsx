@@ -1,55 +1,65 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useReducer } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
-import { ChainGroup, CanvasNode, Vector3 as V3 } from '../../../canvas/CanvasTypes';
+import { ChainGroup } from '../../../canvas/CanvasTypes';
 import { TextLabel, FontSize } from './TextLabel';
 import { Theme, toWorld } from './theme3d';
+import { useScenePhysics } from './ScenePhysicsContext';
 
 // ─── GroupFrame3D ───────────────────────────────────────────────
 // Wireframe bounding box that auto-fits around member nodes.
-// Matches the 2D GroupFrame (dashed border, label, auto-bbox).
+// Reads node positions from bodiesRef (physics engine) via context.
 
 export interface GroupFrame3DProps {
     group: ChainGroup;
-    nodes: CanvasNode[];
     onRemove?: (id: string) => void;
 }
 
 const PAD = 0.25; // padding around outermost nodes
 
 export const GroupFrame3D: React.FC<GroupFrame3DProps> = ({
-    group, nodes, onRemove,
+    group, onRemove,
 }) => {
-    // compute bounding box from member nodes
-    const bbox = useMemo(() => {
-        const members = nodes.filter(n => group.nodeIds.includes(n.id));
-        if (members.length === 0) return null;
+    const { bodiesRef } = useScenePhysics();
+    // Re-render each frame to keep bbox in sync with physics
+    const [, tick] = useReducer(c => c + 1, 0);
+    useFrame(() => tick());
 
+    // Compute bounding box from member node physics bodies
+    const bbox = (() => {
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         let avgZ = 0;
+        let count = 0;
 
-        for (const n of members) {
-            const wx = toWorld(n.position.x);
-            const wy = -toWorld(n.position.y);
-            avgZ += toWorld(n.position.z);
+        for (const nodeId of group.nodeIds) {
+            const body = bodiesRef.current.get(nodeId);
+            if (!body) continue;
 
-            // approximate size per node (use 1.5 world units as default node radius)
+            const wx = toWorld(body.position.x);
+            const wy = -toWorld(body.position.y);
+            const wz = toWorld(body.position.z);
+
             const halfW = 1.3;
             const halfH = 0.6;
             minX = Math.min(minX, wx - halfW);
             maxX = Math.max(maxX, wx + halfW);
             minY = Math.min(minY, wy - halfH);
             maxY = Math.max(maxY, wy + halfH);
+            avgZ += wz;
+            count++;
         }
 
-        avgZ /= members.length;
+        if (count === 0) return null;
+        avgZ /= count;
+
         return {
             cx: (minX + maxX) / 2,
             cy: (minY + maxY) / 2,
-            cz: avgZ - 0.02, // behind nodes
+            cz: avgZ - 0.02,
             w: maxX - minX + PAD * 2,
             h: maxY - minY + PAD * 2,
         };
-    }, [group.nodeIds, nodes]);
+    })();
 
     if (!bbox) return null;
 
@@ -58,7 +68,7 @@ export const GroupFrame3D: React.FC<GroupFrame3DProps> = ({
             {/* Wireframe frame */}
             <RoundedBox args={[bbox.w, bbox.h, 0.02]} radius={0.08} smoothness={3}>
                 <meshBasicMaterial
-                    color={Theme.groupCyan}
+                    color={group.color || Theme.groupCyan}
                     wireframe
                     transparent
                     opacity={0.35}

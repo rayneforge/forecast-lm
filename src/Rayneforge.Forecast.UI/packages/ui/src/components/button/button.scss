@@ -1,0 +1,71 @@
+@use "@rayneforge/styles" as *;
+
+.rf-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-2;
+    font-family: $font-stack;
+    font-weight: 600;
+    border-radius: $radius-md;
+    cursor: pointer;
+    transition: all $motion-normal $ease-standard;
+    border: 1px solid transparent;
+    white-space: nowrap;
+
+    &:active {
+        transform: scale(0.97);
+    }
+
+    &:disabled {
+        opacity: 0.45;
+        pointer-events: none;
+    }
+
+    // ─── Sizes ───────────────────────────────────────────────────
+
+    &--sm {
+        font-size: $font-size-meta;
+        padding: $spacing-1 $spacing-4;
+        height: 30px;
+    }
+
+    &--md {
+        font-size: $font-size-body;
+        padding: $spacing-3 $spacing-8;
+        height: 40px;
+    }
+
+    &--lg {
+        font-size: $font-size-headline;
+        padding: $spacing-4 $spacing-10;
+        height: 48px;
+    }
+
+    // ─── Primary ─────────────────────────────────────────────────
+
+    &--primary {
+        background: $color-accent-primary;
+        color: $color-text-inverse;
+
+        &:hover {
+            background: $color-accent-hover;
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.25);
+        }
+    }
+
+    // ─── Ghost ───────────────────────────────────────────────────
+
+    &--ghost {
+        background: transparent;
+        color: $color-text-secondary;
+        border-color: $color-border-strong;
+
+        &:hover {
+            color: $color-text-primary;
+            border-color: $color-accent-primary;
+            background: $color-accent-soft;
+            box-shadow: none;
+        }
+    }
+}

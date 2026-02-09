@@ -4,9 +4,10 @@ import './news-card.scss';
 
 export interface NewsCardProps {
     article: NewsArticle;
+    onPin?: () => void;
 }
 
-export const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
+export const NewsCard: React.FC<NewsCardProps> = ({ article, onPin }) => {
     const renderDate = (dateStr: string) => {
         try {
             return new Date(dateStr).toLocaleDateString(undefined, { 
@@ -19,6 +20,19 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
 
     return (
         <article className="rf-news-card">
+            {onPin && (
+                <button 
+                    className="rf-news-card__pin-btn"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onPin();
+                    }}
+                    aria-label="Pin article"
+                >
+                    📌
+                </button>
+            )}
             {article.imageUrl && (
                 <img 
                     src={article.imageUrl} 

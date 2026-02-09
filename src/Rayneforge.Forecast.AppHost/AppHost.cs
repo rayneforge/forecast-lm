@@ -74,13 +74,13 @@ if (databaseProvider.Equals("sqlite", StringComparison.OrdinalIgnoreCase))
     var basePath = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", ".."));
 
     var newsConnStr = $"Data Source={Path.Combine(basePath, "news.db")}";
-    var conversationConnStr = $"Data Source={Path.Combine(basePath, "conversation.db")}";
+    var userConnStr = $"Data Source={Path.Combine(basePath, "user.db")}";
 
     clientApi.WithEnvironment("ConnectionStrings__NewsDb", newsConnStr)
-             .WithEnvironment("ConnectionStrings__ConversationDb", conversationConnStr);
+             .WithEnvironment("ConnectionStrings__UserDb", userConnStr);
 
     managementApi.WithEnvironment("ConnectionStrings__NewsDb", newsConnStr)
-                 .WithEnvironment("ConnectionStrings__ConversationDb", conversationConnStr);
+                 .WithEnvironment("ConnectionStrings__UserDb", userConnStr);
 
     worker.WithEnvironment("ConnectionStrings__NewsDb", newsConnStr);
 }
@@ -99,17 +99,19 @@ if (databaseProvider.Equals("cosmos", StringComparison.OrdinalIgnoreCase))
     newsDb.AddContainer("narrative-claims", "/narrativeId");
     newsDb.AddContainer("narrative-entities", "/narrativeId");
 
-    var conversationDb = cosmos.AddCosmosDatabase("ConversationDb");
-    conversationDb.AddContainer("threads", "/userId");
-    conversationDb.AddContainer("messages", "/threadId");
+    var userDb = cosmos.AddCosmosDatabase("UserDb");
+    userDb.AddContainer("threads", "/userId");
+    userDb.AddContainer("messages", "/threadId");
+    userDb.AddContainer("workspaces", "/userId");
+    userDb.AddContainer("workspace-links", "/workspaceId");
 
     worker.WithReference(newsDb);
 
     clientApi.WithReference(newsDb)
-             .WithReference(conversationDb);
+             .WithReference(userDb);
 
     managementApi.WithReference(newsDb)
-                 .WithReference(conversationDb);
+                 .WithReference(userDb);
 }
 
 // ─── 6. Azure OpenAI (embeddings + LLM) ────────────────────────
@@ -159,12 +161,12 @@ if (messageBusProvider.Equals("azureservicebus", StringComparison.OrdinalIgnoreC
     var serviceBus = builder.AddAzureServiceBus("messaging")
         .RunAsEmulator();
 
-    var assessArticleQueue = serviceBus.AddServiceBusQueue("article-ingest");
+    var processArticleQueue = serviceBus.AddServiceBusQueue("article-ingest");
 
     // WithReference wires the connection string automatically.
     // The Worker Azure Functions trigger reads "ServiceBusConnection".
     worker.WithReference(serviceBus)
-          .WithReference(assessArticleQueue) // Ensure dependency so queue is created before worker starts
+          .WithReference(processArticleQueue) // Ensure dependency so queue is created before worker starts
           .WithEnvironment("ServiceBusConnection", serviceBus.Resource.ConnectionStringExpression)
           .WithEnvironment("Providers__MessageBus", "azureservicebus");
 }

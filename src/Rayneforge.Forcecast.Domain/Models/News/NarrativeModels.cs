@@ -2,7 +2,6 @@ namespace Rayneforge.Forecast.Domain.Models;
 
 using Rayneforge.Forecast.Domain.Abstractions;
 using Rayneforge.Forecast.Domain.Attributes;
-using System.Reflection;
 
 // ─── Supporting Enums ───────────────────────────────────────────
 
@@ -62,22 +61,9 @@ public record ArticleClaim : ISemanticEntity
 
     public ArticleClaim() { }
 
-    public static string GetSchemaDescription()
-    {
-        var sb = new System.Text.StringBuilder();
-        sb.AppendLine($"Entity: {nameof(ArticleClaim)}");
+    public static EntitySchema GetSchema() => EntitySchemaBuilder.Build<ArticleClaim>();
 
-        foreach (var prop in typeof(ArticleClaim).GetProperties(BindingFlags.Public | BindingFlags.Instance))
-        {
-            var attr = prop.GetCustomAttribute<FilterableAttribute>();
-            if (attr == null) continue;
-
-            var typeName = prop.PropertyType == typeof(string) ? "string" : prop.PropertyType.Name;
-            var desc = attr.Description != null ? $" - {attr.Description}" : "";
-            sb.AppendLine($"- {prop.Name} ({typeName}){desc}");
-        }
-        return sb.ToString();
-    }
+    public static string GetSchemaDescription() => SchemaFormatter.ToText(GetSchema());
 }
 
 // ─── Narrative ──────────────────────────────────────────────────
@@ -121,25 +107,9 @@ public record Narrative : ISemanticEntity
 
     public Narrative() { }
 
-    public static string GetSchemaDescription()
-    {
-        var sb = new System.Text.StringBuilder();
-        sb.AppendLine($"Entity: {nameof(Narrative)}");
+    public static EntitySchema GetSchema() => EntitySchemaBuilder.Build<Narrative>();
 
-        foreach (var prop in typeof(Narrative).GetProperties(BindingFlags.Public | BindingFlags.Instance))
-        {
-            var attr = prop.GetCustomAttribute<FilterableAttribute>();
-            if (attr == null) continue;
-
-            var typeName = prop.PropertyType.IsEnum ? "enum" : prop.PropertyType.Name;
-            if (prop.PropertyType == typeof(string)) typeName = "string";
-            if (prop.PropertyType == typeof(float)) typeName = "float";
-
-            var desc = attr.Description != null ? $" - {attr.Description}" : "";
-            sb.AppendLine($"- {prop.Name} ({typeName}){desc}");
-        }
-        return sb.ToString();
-    }
+    public static string GetSchemaDescription() => SchemaFormatter.ToText(GetSchema());
 }
 
 // ─── Join Records (M:M) ────────────────────────────────────────

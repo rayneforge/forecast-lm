@@ -2,7 +2,6 @@ namespace Rayneforge.Forecast.Domain.Models;
 
 using Rayneforge.Forecast.Domain.Abstractions;
 using Rayneforge.Forecast.Domain.Attributes;
-using System.Reflection;
 
 // ─── Entity Type ────────────────────────────────────────────────
 
@@ -41,22 +40,7 @@ public record Entity : ISemanticEntity
 
     public Entity() { }
 
-    public static string GetSchemaDescription()
-    {
-        var sb = new System.Text.StringBuilder();
-        sb.AppendLine($"Entity: {nameof(Entity)}");
+    public static EntitySchema GetSchema() => EntitySchemaBuilder.Build<Entity>();
 
-        foreach (var prop in typeof(Entity).GetProperties(BindingFlags.Public | BindingFlags.Instance))
-        {
-            var attr = prop.GetCustomAttribute<FilterableAttribute>();
-            if (attr == null) continue;
-
-            var typeName = prop.PropertyType.IsEnum ? "enum" : prop.PropertyType.Name;
-            if (prop.PropertyType == typeof(string)) typeName = "string";
-
-            var desc = attr.Description != null ? $" - {attr.Description}" : "";
-            sb.AppendLine($"- {prop.Name} ({typeName}){desc}");
-        }
-        return sb.ToString();
-    }
+    public static string GetSchemaDescription() => SchemaFormatter.ToText(GetSchema());
 }

@@ -1,0 +1,44 @@
+@use "@rayneforge/styles" as *;
+
+.rf-feature-card {
+    background: $color-canvas-surface;
+    border: 1px solid $color-border-subtle;
+    border-radius: $radius-lg;
+    padding: $spacing-8 $spacing-6;
+    transition: border-color $motion-normal $ease-standard,
+                box-shadow $motion-normal $ease-standard;
+
+    &:hover {
+        border-color: $color-border-accent;
+        box-shadow: $elevation-2;
+    }
+
+    &__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+        color: $color-accent-primary;
+        background: $color-accent-soft;
+        border-radius: $radius-md;
+        margin-bottom: $spacing-4;
+    }
+
+    &__title {
+        margin: 0 0 $spacing-2;
+        font-family: $font-stack;
+        font-size: $font-size-headline;
+        font-weight: 600;
+        color: $color-text-primary;
+    }
+
+    &__desc {
+        margin: 0;
+        font-family: $font-stack;
+        font-size: $font-size-body;
+        line-height: $line-height-normal;
+        color: $color-text-secondary;
+    }
+}

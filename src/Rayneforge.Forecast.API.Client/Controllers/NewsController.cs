@@ -14,6 +14,15 @@ public class NewsController(
     ISemanticRepository<NewsArticle> repository,
     IEmbeddingsProvider embeddingsProvider) : ControllerBase
 {
+    /// <summary>
+    /// Returns a JSON-schema-like descriptor of the NewsArticle entity
+    /// including all filterable properties, types, and enum values.
+    /// Used by the UI to dynamically build sidebar filters.
+    /// </summary>
+    [HttpGet("schema")]
+    [AllowAnonymous]
+    public ActionResult<EntitySchema> GetSchema() => Ok(NewsArticle.GetSchema());
+
     [HttpGet]
     [EnableQuery]
     public async Task<IQueryable<NewsArticle>> Get()

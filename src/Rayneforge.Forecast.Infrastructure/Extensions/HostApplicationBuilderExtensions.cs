@@ -104,7 +104,7 @@ public static class HostApplicationBuilderExtensions
         return builder;
     }
 
-    public static IHostApplicationBuilder AddConversationStore(this IHostApplicationBuilder builder)
+    public static IHostApplicationBuilder AddUserStore(this IHostApplicationBuilder builder)
     {
         builder.Services.AddOptions<ProviderOptions>()
             .BindConfiguration(ProviderOptions.SectionName);
@@ -114,15 +114,15 @@ public static class HostApplicationBuilderExtensions
         // Register Conversation-specific DbContext
         if (provider.Equals("sqlite", StringComparison.OrdinalIgnoreCase))
         {
-            builder.Services.AddDbContext<SqliteConversationDbContext>(options =>
-                options.UseSqlite(builder.Configuration.GetConnectionString("ConversationDb") ?? "Data Source=conversation.db"));
+            builder.Services.AddDbContext<SqliteUserDbContext>(options =>
+                options.UseSqlite(builder.Configuration.GetConnectionString("UserDb") ?? "Data Source=user.db"));
         }
         else if (provider.Equals("cosmos", StringComparison.OrdinalIgnoreCase))
         {
-            builder.Services.AddDbContext<CosmosConversationDbContext>(options =>
+            builder.Services.AddDbContext<CosmosUserDbContext>(options =>
                 options.UseCosmos(
                     builder.Configuration.GetConnectionString("cosmos")!,
-                    databaseName: "ConversationDb"
+                    databaseName: "UserDb"
                 ));
         }
 
@@ -135,6 +135,11 @@ public static class HostApplicationBuilderExtensions
         builder.Services.AddScoped<IChatBlobProviderFactory, ChatBlobProviderFactory>();
         builder.Services.AddScoped<IChatBlobProvider>(sp =>
             sp.GetRequiredService<IChatBlobProviderFactory>().CreateChatBlobProvider());
+
+        // Workspace repository (SQLite or Cosmos)
+        builder.Services.AddScoped<IWorkspaceRepositoryFactory, WorkspaceRepositoryFactory>();
+        builder.Services.AddScoped<IWorkspaceRepository>(sp =>
+            sp.GetRequiredService<IWorkspaceRepositoryFactory>().CreateWorkspaceRepository());
 
         return builder;
     }

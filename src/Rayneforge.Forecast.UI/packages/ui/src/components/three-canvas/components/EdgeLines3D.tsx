@@ -1,18 +1,21 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useReducer } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Line, QuadraticBezierLine } from '@react-three/drei';
 import {
-    CanvasEdge, CanvasNode, EdgeType, Vector3 as V3,
+    CanvasEdge, EdgeType,
 } from '../../../canvas/CanvasTypes';
 import { Theme, toWorld } from './theme3d';
+import { useScenePhysics } from './ScenePhysicsContext';
 
 // ─── EdgeLines3D ────────────────────────────────────────────────
 // Renders all edges as lines / curves between node centres.
-// Uses drei's <Line> for straight and <QuadraticBezierLine> for curves.
-// Edge colour and dash pattern keyed by EdgeType.
+// Reads positions from bodiesRef (physics engine) in useFrame and
+// triggers a lightweight React re-render to update drei <Line> props.
+// This is acceptable overhead — line geometry is cheap compared to
+// node meshes with RoundedBox + SDF text.
 
 export interface EdgeLines3DProps {
     edges: CanvasEdge[];
-    nodes: CanvasNode[];
 }
 
 const edgeColor: Record<EdgeType, number> = {
@@ -27,26 +30,24 @@ const edgeDash: Record<EdgeType, number> = {
     relation:      0.04,
 };
 
-function nodeCenter(n: CanvasNode): [number, number, number] {
-    return [toWorld(n.position.x), -toWorld(n.position.y), toWorld(n.position.z)];
-}
+export const EdgeLines3D: React.FC<EdgeLines3DProps> = ({ edges }) => {
+    const { bodiesRef } = useScenePhysics();
+    // Force re-render each frame so line positions stay in sync with physics
+    const [, tick] = useReducer(c => c + 1, 0);
+    useFrame(() => tick());
 
-export const EdgeLines3D: React.FC<EdgeLines3DProps> = ({ edges, nodes }) => {
-    const nodeMap = useMemo(() => {
-        const m = new Map<string, CanvasNode>();
-        for (const n of nodes) m.set(n.id, n);
-        return m;
-    }, [nodes]);
+    const nodeCenter = (id: string): [number, number, number] | null => {
+        const body = bodiesRef.current.get(id);
+        if (!body) return null;
+        return [toWorld(body.position.x), -toWorld(body.position.y), toWorld(body.position.z)];
+    };
 
     return (
         <group>
             {edges.map(edge => {
-                const src = nodeMap.get(edge.source);
-                const tgt = nodeMap.get(edge.target);
-                if (!src || !tgt) return null;
-
-                const start = nodeCenter(src);
-                const end = nodeCenter(tgt);
+                const start = nodeCenter(edge.source);
+                const end = nodeCenter(edge.target);
+                if (!start || !end) return null;
                 const color = edgeColor[edge.type] ?? Theme.textMuted;
                 const dash = edgeDash[edge.type] ?? 0;
 

@@ -7,9 +7,11 @@ export interface PinnedBoardProps {
         group?: string;
         item: PinnedItemProps;
     }[];
+    onUnpin?: (id: string) => void;
+    onItemClick?: (id: string) => void;
 }
 
-export const PinnedBoard: React.FC<PinnedBoardProps> = ({ items }) => {
+export const PinnedBoard: React.FC<PinnedBoardProps> = ({ items, onUnpin, onItemClick }) => {
     // Grouping Logic
     const groups: { [key: string]: PinnedItemProps[] } = {};
     const ungrouped: PinnedItemProps[] = [];
@@ -26,7 +28,7 @@ export const PinnedBoard: React.FC<PinnedBoardProps> = ({ items }) => {
     return (
         <aside className="rf-pinned-board">
             <header className="rf-pinned-board__header">
-                <span className="rf-pinned-board__title">Pinned Items</span>
+                <span className="rf-pinned-board__title">Linked Items</span>
                 <span className="rf-pinned-board__count">{items.length}</span>
             </header>
 
@@ -37,8 +39,13 @@ export const PinnedBoard: React.FC<PinnedBoardProps> = ({ items }) => {
                             {name} ({groupItems.length})
                         </div>
                         <div className="rf-pin-group__list">
-                            {groupItems.map((itemProps, idx) => (
-                                <PinnedItem key={`${name}-${idx}`} {...itemProps} />
+                            {groupItems.map((itemProps) => (
+                                <PinnedItem
+                                    key={itemProps.id}
+                                    {...itemProps}
+                                    onUnpin={onUnpin}
+                                    onClick={onItemClick}
+                                />
                             ))}
                         </div>
                     </div>
@@ -46,8 +53,13 @@ export const PinnedBoard: React.FC<PinnedBoardProps> = ({ items }) => {
 
                 {ungrouped.length > 0 && (
                     <div className="rf-pin-group__list">
-                        {ungrouped.map((itemProps, idx) => (
-                            <PinnedItem key={`ungrouped-${idx}`} {...itemProps} />
+                        {ungrouped.map((itemProps) => (
+                            <PinnedItem
+                                key={itemProps.id}
+                                {...itemProps}
+                                onUnpin={onUnpin}
+                                onClick={onItemClick}
+                            />
                         ))}
                     </div>
                 )}

@@ -2,6 +2,11 @@
   "name": "@rayneforge/styles",
   "version": "1.0.0",
   "main": "_index.scss",
+  "exports": {
+    ".": "./_index.scss",
+    "./_index.scss": "./_index.scss",
+    "./_design-tokens.scss": "./_design-tokens.scss"
+  },
   "private": true,
   "dependencies": {
     "react": "^19.2.4",

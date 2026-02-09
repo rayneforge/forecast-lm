@@ -1,0 +1,110 @@
+@use "@rayneforge/styles" as *;
+
+$color-claim-accent: #F0883E; // warm orange
+
+.rf-claim-node {
+    position: absolute;
+    width: 240px;
+    background: rgba(25, 18, 12, 0.95);
+    border: 1px solid $color-border-subtle;
+    border-left: 3px solid $color-claim-accent;
+    border-radius: $radius-md;
+    box-shadow: $elevation-1;
+    padding: $spacing-3;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    transition: box-shadow $motion-normal $ease-standard,
+                border-color $motion-normal $ease-standard;
+
+    &--selected {
+        border-color: $color-accent-primary;
+        border-left-color: $color-claim-accent;
+        box-shadow: $elevation-float;
+    }
+
+    &--dragging {
+        cursor: grabbing;
+        box-shadow: $elevation-node-drag;
+        transition: none;
+        z-index: 9999 !important;
+    }
+
+    // ── Decorative open-quote ──
+
+    &__quote {
+        font-size: 28px;
+        line-height: 1;
+        color: $color-claim-accent;
+        opacity: 0.6;
+        margin-bottom: $spacing-1;
+        font-family: Georgia, serif;
+    }
+
+    // ── Claim text ──
+
+    &__text {
+        margin: 0 0 $spacing-2;
+        font-size: $font-size-body;
+        font-weight: 500;
+        color: $color-text-primary;
+        line-height: $line-height-normal;
+        font-style: italic;
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    // ── Source article ref ──
+
+    &__source {
+        display: flex;
+        align-items: center;
+        gap: $spacing-1;
+        font-size: $font-size-meta;
+        color: $color-text-muted;
+    }
+
+    &__source-icon {
+        font-size: 12px;
+    }
+
+    &__source-title {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    // ── Anchors ──
+
+    &__anchors {
+        position: absolute;
+        inset: -6px;
+        pointer-events: none;
+    }
+
+    &__anchor {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: $color-canvas-surface;
+        border: 2px solid $color-claim-accent;
+        pointer-events: auto;
+        cursor: crosshair;
+        opacity: 0;
+        transition: opacity $motion-fast;
+
+        &--top    { top: 0;   left: 50%;  transform: translate(-50%, -50%); }
+        &--right  { top: 50%; right: 0;   transform: translate(50%, -50%); }
+        &--bottom { bottom: 0; left: 50%; transform: translate(-50%, 50%); }
+        &--left   { top: 50%; left: 0;    transform: translate(-50%, -50%); }
+    }
+
+    &:hover &__anchor,
+    &--selected &__anchor {
+        opacity: 1;
+    }
+}

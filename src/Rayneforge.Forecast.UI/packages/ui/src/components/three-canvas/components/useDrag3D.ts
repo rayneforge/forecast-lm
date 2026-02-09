@@ -12,20 +12,30 @@ import { PX_TO_WORLD } from './theme3d';
 //                  and the node origin, start dragging
 //   pointerMove  → project pointer onto the same parallel plane,
 //                  apply offset, call onMove with updated V3
-//   pointerUp    → stop dragging
+//   pointerUp    → stop dragging, compute fling velocity
 //
 // The drag plane is always parallel to the camera's near plane so
 // it feels natural regardless of orbit angle.
 
+// Circular buffer for velocity estimation
+const SAMPLE_COUNT = 4;
+interface PointerSample { x: number; y: number; time: number; }
+
 export interface UseDrag3DOptions {
     /** Node id — passed to onMove */
     id: string;
-    /** Current world position [x, y, z] */
+    /** Current world position [x, y, z] — fallback if getCurrentPosition is not provided */
     position: [number, number, number];
+    /** Live position reader — used when physics moves nodes externally */
+    getCurrentPosition?: () => [number, number, number];
     /** If true, dragging is disabled */
     locked?: boolean;
     /** Called with pixel-space V3 each frame while dragging */
     onMove: (id: string, pos: V3) => void;
+    /** Called when drag ends with pixel-space velocity (px/s) */
+    onEnd?: (id: string, pos: V3, velocity: V3) => void;
+    /** Called when drag starts */
+    onStart?: (id: string) => void;
 }
 
 export interface UseDrag3DResult {
@@ -40,7 +50,7 @@ export interface UseDrag3DResult {
 }
 
 export function useDrag3D({
-    id, position, locked, onMove,
+    id, position, getCurrentPosition, locked, onMove, onEnd, onStart,
 }: UseDrag3DOptions): UseDrag3DResult {
     const { camera, gl } = useThree();
     const [isDragging, setIsDragging] = useState(false);
@@ -52,11 +62,14 @@ export function useDrag3D({
     const raycaster = useRef(new THREE.Raycaster());
     const intersection = useRef(new THREE.Vector3());
 
+    // Velocity tracking
+    const samplesRef = useRef<PointerSample[]>([]);
+    const sampleIdxRef = useRef(0);
+
     /** Set up the drag plane parallel to camera at the node's depth */
     const initPlane = useCallback((hitPoint: THREE.Vector3) => {
         const normal = new THREE.Vector3();
         camera.getWorldDirection(normal);
-        // Plane at the node's position, facing the camera
         planeRef.current.setFromNormalAndCoplanarPoint(normal, hitPoint);
     }, [camera]);
 
@@ -74,25 +87,64 @@ export function useDrag3D({
         );
     }, [gl]);
 
+    /** Convert world→pixel V3 */
+    const worldToPixel = (world: THREE.Vector3): V3 => {
+        const invScale = 1 / PX_TO_WORLD;
+        return { x: world.x * invScale, y: -world.y * invScale, z: world.z * invScale };
+    };
+
     const onPointerDown = useCallback((e: ThreeEvent<PointerEvent>) => {
         if (locked) return;
         e.stopPropagation();
-        // Capture pointer so moves outside the mesh are still tracked
         (e.nativeEvent.target as HTMLElement)?.setPointerCapture?.(e.nativeEvent.pointerId);
 
-        const nodeOrigin = new THREE.Vector3(...position);
+        // Read live position if available (physics-driven), else use prop
+        const pos = getCurrentPosition?.() ?? position;
+        const nodeOrigin = new THREE.Vector3(...pos);
         const hitPoint = e.point.clone();
 
         initPlane(hitPoint);
         offsetRef.current.copy(nodeOrigin).sub(hitPoint);
         setIsDragging(true);
-    }, [locked, position, initPlane]);
+
+        // Reset velocity samples
+        samplesRef.current = [];
+        sampleIdxRef.current = 0;
+
+        onStart?.(id);
+    }, [locked, position, getCurrentPosition, initPlane, id, onStart]);
 
     const onPointerUp = useCallback((e: ThreeEvent<PointerEvent>) => {
         if (!isDragging) return;
         (e.nativeEvent.target as HTMLElement)?.releasePointerCapture?.(e.nativeEvent.pointerId);
         setIsDragging(false);
-    }, [isDragging]);
+
+        // Compute final position
+        const ndc = ndcFromEvent(e);
+        const hit = projectPointer(ndc);
+        const finalPixel: V3 = hit
+            ? worldToPixel(hit.clone().add(offsetRef.current))
+            : { x: position[0] / PX_TO_WORLD, y: -position[1] / PX_TO_WORLD, z: position[2] / PX_TO_WORLD };
+
+        // Compute velocity from samples
+        let velocity: V3 = { x: 0, y: 0, z: 0 };
+        const buf = samplesRef.current;
+        if (buf.length >= 2) {
+            const sorted = [...buf].sort((a, b) => a.time - b.time);
+            const oldest = sorted[0];
+            const newest = sorted[sorted.length - 1];
+            const elapsed = (newest.time - oldest.time) / 1000;
+            if (elapsed > 0.005) {
+                velocity = {
+                    x: (newest.x - oldest.x) / elapsed,
+                    y: (newest.y - oldest.y) / elapsed,
+                    z: 0,
+                };
+            }
+        }
+
+        onEnd?.(id, finalPixel, velocity);
+    }, [isDragging, id, onEnd, ndcFromEvent, projectPointer, position]);
 
     const onPointerMove = useCallback((e: ThreeEvent<PointerEvent>) => {
         if (!isDragging || locked) return;
@@ -103,14 +155,18 @@ export function useDrag3D({
         if (!hit) return;
 
         const newWorld = hit.clone().add(offsetRef.current);
+        const pixelPos = worldToPixel(newWorld);
 
-        // Convert world → pixel-space V3 for the state (invert the toWorld transform)
-        const invScale = 1 / PX_TO_WORLD;
-        onMove(id, {
-            x: newWorld.x * invScale,
-            y: -newWorld.y * invScale, // flip Y back
-            z: newWorld.z * invScale,
-        });
+        // Record velocity sample (pixel-space)
+        const sample: PointerSample = { x: pixelPos.x, y: pixelPos.y, time: performance.now() };
+        if (samplesRef.current.length < SAMPLE_COUNT) {
+            samplesRef.current.push(sample);
+        } else {
+            samplesRef.current[sampleIdxRef.current % SAMPLE_COUNT] = sample;
+        }
+        sampleIdxRef.current++;
+
+        onMove(id, pixelPos);
     }, [isDragging, locked, id, onMove, ndcFromEvent, projectPointer]);
 
     return {

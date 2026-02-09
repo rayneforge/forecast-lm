@@ -56,25 +56,6 @@
         margin-right: auto;
     }
 
-    &__add-btn {
-        all: unset;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: $spacing-1;
-        padding: $spacing-1 $spacing-3;
-        border-radius: $radius-md;
-        font-size: $font-size-meta;
-        color: $color-accent-primary;
-        border: 1px solid rgba($color-accent-primary, 0.3);
-        transition: all $motion-fast $ease-standard;
-
-        &:hover {
-            background: rgba($color-accent-primary, 0.1);
-            border-color: $color-accent-primary;
-        }
-    }
-
     &__canvas-area {
         flex: 1;
         display: flex;
@@ -100,4 +81,5 @@
         padding: 2px $spacing-2;
         opacity: 0.7;
     }
+
 }

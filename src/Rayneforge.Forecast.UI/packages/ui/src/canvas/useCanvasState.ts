@@ -3,9 +3,10 @@ import {
     CanvasState, CanvasAction, CanvasNode, CanvasEdge,
     ChainGroup, CanvasViewMode, CanvasRenderMode, PresentationMode,
     DeviceCapabilities, Vector3, Camera3D, vec3, addVec3,
+    WorkspaceGroup, DockPanelId,
     detectCapabilities,
 } from './CanvasTypes';
-import { LayoutMode, applyLayout } from './useLayout';
+import { LayoutMode, applyLayout, hasOverlap, autoSpreadNodes } from './useLayout';
 
 const defaultCamera: Camera3D = { position: vec3(0, 0, 0), zoom: 1 };
 
@@ -13,6 +14,7 @@ const initialState: CanvasState = {
     nodes: [],
     edges: [],
     groups: [],
+    workspaceGroups: [],
     activeView: 'free',
     selectedNodeId: null,
     selectedGroupId: null,
@@ -20,6 +22,11 @@ const initialState: CanvasState = {
     renderMode: '2d',
     presentationMode: 'flat',
     deviceCapabilities: null,
+    layoutTargets: null,
+    activeLayoutMode: null,
+    layoutDepth: 1,
+    layoutGroups: [],
+    activeDockPanel: null,
 };
 
 function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
@@ -27,8 +34,18 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
         case 'SET_VIEW':
             return { ...state, activeView: action.view };
 
-        case 'ADD_NODE':
-            return { ...state, nodes: [...state.nodes, action.node] };
+        case 'ADD_NODE': {
+            const next = { ...state, nodes: [...state.nodes, action.node] };
+            // Auto-add to default workspace group
+            if (next.workspaceGroups.length > 0) {
+                next.workspaceGroups = next.workspaceGroups.map((g, i) =>
+                    i === 0 && !g.nodeIds.includes(action.node.id)
+                        ? { ...g, nodeIds: [...g.nodeIds, action.node.id] }
+                        : g
+                );
+            }
+            return next;
+        }
 
         case 'REMOVE_NODE': {
             const id = action.id;
@@ -37,6 +54,10 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
                 nodes: state.nodes.filter(n => n.id !== id),
                 edges: state.edges.filter(e => e.source !== id && e.target !== id),
                 groups: state.groups.map(g => ({
+                    ...g,
+                    nodeIds: g.nodeIds.filter(nid => nid !== id),
+                })),
+                workspaceGroups: state.workspaceGroups.map(g => ({
                     ...g,
                     nodeIds: g.nodeIds.filter(nid => nid !== id),
                 })),
@@ -97,6 +118,14 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
         case 'SELECT_GROUP':
             return { ...state, selectedGroupId: action.id, selectedNodeId: null };
 
+        case 'MOVE_GROUP':
+            return {
+                ...state,
+                groups: state.groups.map(g =>
+                    g.id === action.id ? { ...g, position: action.position } : g
+                ),
+            };
+
         case 'SET_CAMERA':
             return { ...state, camera: { ...state.camera, ...action.camera } };
 
@@ -118,8 +147,59 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
                     const p = posMap.get(n.id);
                     return p ? { ...n, position: p } : n;
                 }),
+                activeLayoutMode: action.mode,
+                layoutDepth: action.depth,
+                layoutGroups: action.groups,
             };
         }
+
+        case 'SET_LAYOUT_DEPTH':
+            return { ...state, layoutDepth: action.depth };
+
+        case 'CLEAR_LAYOUT_GROUPS':
+            return { ...state, activeLayoutMode: null, layoutGroups: [], layoutDepth: 1 };
+
+        // ── Workspace groups ──
+        case 'ADD_WORKSPACE_GROUP':
+            return { ...state, workspaceGroups: [...state.workspaceGroups, action.group] };
+
+        case 'REMOVE_WORKSPACE_GROUP':
+            return {
+                ...state,
+                workspaceGroups: state.workspaceGroups.filter(g => g.id !== action.id),
+            };
+
+        case 'ADD_NODE_TO_WORKSPACE':
+            return {
+                ...state,
+                workspaceGroups: state.workspaceGroups.map(g =>
+                    g.id === action.workspaceId && !g.nodeIds.includes(action.nodeId)
+                        ? { ...g, nodeIds: [...g.nodeIds, action.nodeId] }
+                        : g
+                ),
+            };
+
+        case 'REMOVE_NODE_FROM_WORKSPACE':
+            return {
+                ...state,
+                workspaceGroups: state.workspaceGroups.map(g =>
+                    g.id === action.workspaceId
+                        ? { ...g, nodeIds: g.nodeIds.filter(nid => nid !== action.nodeId) }
+                        : g
+                ),
+            };
+
+        case 'MOVE_WORKSPACE_GROUP':
+            return {
+                ...state,
+                workspaceGroups: state.workspaceGroups.map(g =>
+                    g.id === action.id ? { ...g, position: action.position } : g
+                ),
+            };
+
+        // ── Dock ──
+        case 'SET_DOCK_PANEL':
+            return { ...state, activeDockPanel: action.panel };
 
         // ── Layer 1 + 2 switching ──
         case 'SET_RENDER_MODE':
@@ -131,6 +211,9 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
         case 'SET_DEVICE_CAPABILITIES':
             return { ...state, deviceCapabilities: action.capabilities };
 
+        case 'SET_LAYOUT_TARGETS':
+            return { ...state, layoutTargets: action.targets };
+
         default:
             return state;
     }
@@ -139,7 +222,20 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
 export function useCanvasState(initial?: Partial<CanvasState>) {
     const [state, dispatch] = useReducer(
         canvasReducer,
-        { ...initialState, ...initial }
+        (() => {
+            const merged = { ...initialState, ...initial };
+            // Auto-create a default workspace group if none exist
+            if (merged.workspaceGroups.length === 0) {
+                merged.workspaceGroups = [{
+                    id: 'ws-default',
+                    label: 'Workspace',
+                    nodeIds: merged.nodes.map(n => n.id),
+                    position: vec3(0, 0, 0),
+                    color: '#00d2ff',
+                }];
+            }
+            return merged;
+        })()
     );
 
     const moveNode = useCallback((id: string, position: Vector3) => {
@@ -166,13 +262,63 @@ export function useCanvasState(initial?: Partial<CanvasState>) {
         dispatch({ type: 'SET_PRESENTATION_MODE', mode });
     }, []);
 
-    /** Recompute layout and move all nodes at once */
-    const reflow = useCallback((layoutMode: LayoutMode) => {
+    /** Recompute layout and move all nodes at once (instant) */
+    const reflow = useCallback((layoutMode: LayoutMode, rootNodeId?: string, depth?: number) => {
+        const d = depth ?? state.layoutDepth;
         const result = applyLayout(layoutMode, state.nodes, state.edges, {
             renderMode: state.renderMode,
+            rootNodeId,
+            depth: d,
         });
-        dispatch({ type: 'APPLY_LAYOUT', positions: result.positions });
-    }, [state.nodes, state.edges, state.renderMode]);
+        dispatch({ type: 'APPLY_LAYOUT', positions: result.positions, groups: result.groups, mode: layoutMode, depth: d });
+    }, [state.nodes, state.edges, state.renderMode, state.layoutDepth]);
+
+    /**
+     * Recompute layout and animate nodes to new positions via the physics engine.
+     * Stores targets in state so the physics hook can call api.setTargets().
+     */
+    const reflowAnimated = useCallback((layoutMode: LayoutMode, rootNodeId?: string, depth?: number) => {
+        const d = depth ?? state.layoutDepth;
+        const result = applyLayout(layoutMode, state.nodes, state.edges, {
+            renderMode: state.renderMode,
+            rootNodeId,
+            depth: d,
+        });
+        dispatch({ type: 'APPLY_LAYOUT', positions: result.positions, groups: result.groups, mode: layoutMode, depth: d });
+        dispatch({ type: 'SET_LAYOUT_TARGETS', targets: result.positions });
+    }, [state.nodes, state.edges, state.renderMode, state.layoutDepth]);
+
+    /** Drill in (increase depth) — only meaningful for group-date / group-location */
+    const drillIn = useCallback(() => {
+        const mode = state.activeLayoutMode;
+        if (!mode || (mode !== 'group-date' && mode !== 'group-location')) return;
+        const maxDepth = mode === 'group-date' ? 2 : 5;
+        const next = Math.min(state.layoutDepth + 1, maxDepth);
+        if (next === state.layoutDepth) return;
+        const result = applyLayout(mode, state.nodes, state.edges, {
+            renderMode: state.renderMode,
+            depth: next,
+        });
+        dispatch({ type: 'APPLY_LAYOUT', positions: result.positions, groups: result.groups, mode, depth: next });
+    }, [state.activeLayoutMode, state.layoutDepth, state.nodes, state.edges, state.renderMode]);
+
+    /** Drill out (decrease depth) */
+    const drillOut = useCallback(() => {
+        const mode = state.activeLayoutMode;
+        if (!mode || (mode !== 'group-date' && mode !== 'group-location')) return;
+        const next = Math.max(state.layoutDepth - 1, 0);
+        if (next === state.layoutDepth) return;
+        const result = applyLayout(mode, state.nodes, state.edges, {
+            renderMode: state.renderMode,
+            depth: next,
+        });
+        dispatch({ type: 'APPLY_LAYOUT', positions: result.positions, groups: result.groups, mode, depth: next });
+    }, [state.activeLayoutMode, state.layoutDepth, state.nodes, state.edges, state.renderMode]);
+
+    /** Clear layout groups (return to freeform) */
+    const clearLayout = useCallback(() => {
+        dispatch({ type: 'CLEAR_LAYOUT_GROUPS' });
+    }, []);
 
     // Auto-detect device capabilities once on mount
     useEffect(() => {
@@ -181,9 +327,19 @@ export function useCanvasState(initial?: Partial<CanvasState>) {
         });
     }, []);
 
+    // Auto-spread overlapping nodes on initial mount
+    useEffect(() => {
+        if (state.nodes.length > 1 && hasOverlap(state.nodes)) {
+            const positions = autoSpreadNodes(state.nodes);
+            dispatch({ type: 'APPLY_LAYOUT', positions, groups: [], mode: null as unknown as LayoutMode, depth: state.layoutDepth });
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // only on mount
+
     return {
         state, dispatch,
         moveNode, selectNode, addEdge, setView,
-        setRenderMode, setPresentationMode, reflow,
+        setRenderMode, setPresentationMode,
+        reflow, reflowAnimated, drillIn, drillOut, clearLayout,
     };
 }

@@ -1,6 +1,6 @@
 {
-  "name": "Rayneforge Forecast",
-  "short_name": "Rayneforge",
+  "name": "Forecast",
+  "short_name": "Forecast",
   "description": "Spatial news intelligence — canvas, narrative analysis, and XR visualization",
   "start_url": "/",
   "display": "standalone",

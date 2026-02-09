@@ -5,9 +5,9 @@ import {
     LensPanel,
     PinnedBoard,
     NewsCard,
-    PinnedItemProps,
     FloatingSearchBar,
 } from '@rayneforge/ui';
+import type { PinnedItemProps } from '@rayneforge/ui';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
 

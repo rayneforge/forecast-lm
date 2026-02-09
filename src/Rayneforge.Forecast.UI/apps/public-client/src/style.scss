@@ -54,16 +54,6 @@ html, body, #root {
     flex-direction: column;
     height: 100vh;
 
-    &__nav {
-        display: flex;
-        align-items: center;
-        gap: $spacing-4;
-        padding: $spacing-2 $spacing-4;
-        background: $color-canvas-surface;
-        border-bottom: 1px solid $color-border-subtle;
-        flex-shrink: 0;
-    }
-
     &__back {
         background: none;
         border: 1px solid $color-border-subtle;
@@ -85,8 +75,32 @@ html, body, #root {
         font-weight: 600;
     }
 
+    &__body {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    &__sidebar {
+        width: 280px;
+        flex-shrink: 0;
+        border-right: 1px solid $color-border-subtle;
+        overflow-y: auto;
+        padding: $spacing-4;
+        background: $color-canvas-default;
+    }
+
     &__canvas {
         flex: 1;
         overflow: hidden;
+    }
+
+    &__empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: $color-text-muted;
+        font-size: $font-size-body;
     }
 }

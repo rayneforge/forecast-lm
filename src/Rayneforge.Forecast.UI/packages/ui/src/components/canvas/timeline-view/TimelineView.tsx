@@ -55,10 +55,17 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ state, onSelectNode 
     const relatedNodes = state.nodes.filter(n => relatedIds.includes(n.id));
 
     const nodeTitle = (n: CanvasNode) =>
-        n.type === 'topic' ? n.data.label : n.type === 'entity' ? n.data.name : (n.data as any).title;
+        n.type === 'entity' ? n.data.name
+        : n.type === 'narrative' ? n.data.label
+        : n.type === 'claim' ? n.data.normalizedText
+        : (n.data as any).title;
 
     const nodeIcon = (n: CanvasNode) =>
-        n.type === 'article' ? '📰' : n.type === 'note' ? '📝' : '💬';
+        n.type === 'article' ? '📰'
+        : n.type === 'note' ? '📝'
+        : n.type === 'narrative' ? '📊'
+        : n.type === 'claim' ? '💬'
+        : '💬';
 
     return (
         <div className="rf-timeline">

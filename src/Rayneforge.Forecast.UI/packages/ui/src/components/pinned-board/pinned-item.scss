@@ -64,6 +64,43 @@
         color: $color-accent-primary;
     }
 
+    &__sub-items {
+        display: flex;
+        flex-wrap: wrap;
+        gap: $spacing-1;
+        margin-left: 20px;
+        margin-top: $spacing-1;
+    }
+
+    &__sub-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: $spacing-1;
+        padding: 2px $spacing-2;
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid $color-border-subtle;
+        border-radius: $radius-full;
+        font-size: 10px;
+        color: $color-text-secondary;
+        cursor: pointer;
+        transition: background-color 0.2s;
+
+        &:hover {
+            // Hardcoded fallback if variables fail resolution
+            background-color: rgba(240, 246, 252, 0.08); 
+            color: $color-text-primary;
+        }
+    }
+
+    &__sub-icon {
+        font-size: 10px;
+        opacity: 0.8;
+    }
+    
+    &__sub-title {
+        // Optional truncation if needed
+    }
+
     &__close {
         position: absolute;
         top: 4px;

@@ -9,7 +9,7 @@ const meta: Meta<typeof TopBar> = {
       layout: 'fullscreen'
   },
   args: {
-    title: 'Rayneforge',
+    title: 'Forecast',
     showSearch: true
   }
 };

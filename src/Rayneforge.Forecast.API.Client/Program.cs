@@ -38,7 +38,7 @@ builder.AddNewsProvider();
 builder.AddNewsRepository();
 builder.AddEmbeddingsProvider();
 builder.AddLLMProvider();
-builder.AddConversationStore();
+builder.AddUserStore();
 builder.AddMessageBus();
 builder.AddAgentService();
 

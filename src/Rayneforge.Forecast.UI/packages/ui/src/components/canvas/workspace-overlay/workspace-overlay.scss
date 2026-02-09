@@ -1,0 +1,138 @@
+@use "@rayneforge/styles" as *;
+
+.rf-workspace-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &__backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(6px);
+        cursor: pointer;
+    }
+
+    &__panel {
+        position: relative;
+        width: min(560px, 90vw);
+        max-height: 80vh;
+        background: $color-canvas-board;
+        border: 1px solid $color-border-subtle;
+        border-radius: $radius-xl;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 12px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: $spacing-4 $spacing-5;
+        border-bottom: 1px solid $color-border-subtle;
+    }
+
+    &__title-row {
+        display: flex;
+        align-items: center;
+        gap: $spacing-3;
+    }
+
+    &__icon {
+        font-size: 1.4rem;
+    }
+
+    &__title {
+        margin: 0;
+        font-size: $font-size-title;
+        font-weight: 600;
+        color: $color-text-primary;
+    }
+
+    &__count {
+        font-size: $font-size-meta;
+        color: $color-text-secondary;
+        background: rgba(255, 255, 255, 0.06);
+        padding: 2px 8px;
+        border-radius: $radius-sm;
+    }
+
+    &__close {
+        background: none;
+        border: none;
+        color: $color-text-secondary;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: $spacing-2;
+        border-radius: $radius-sm;
+        transition: color $motion-fast, background $motion-fast;
+
+        &:hover {
+            color: $color-text-primary;
+            background: rgba(255, 255, 255, 0.06);
+        }
+    }
+
+    &__body {
+        flex: 1;
+        overflow-y: auto;
+        padding: $spacing-4 $spacing-5;
+    }
+
+    &__empty {
+        text-align: center;
+        color: $color-text-secondary;
+        font-size: $font-size-body;
+        padding: $spacing-8 0;
+    }
+
+    &__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-2;
+    }
+
+    &__item {
+        display: flex;
+        align-items: center;
+        gap: $spacing-3;
+        padding: $spacing-3 $spacing-4;
+        border-radius: $radius-md;
+        cursor: pointer;
+        transition: background $motion-fast;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+    }
+
+    &__item-icon {
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    &__item-type {
+        font-size: $font-size-meta;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: $color-accent-primary;
+        flex-shrink: 0;
+        width: 70px;
+    }
+
+    &__item-label {
+        font-size: $font-size-body;
+        color: $color-text-primary;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}

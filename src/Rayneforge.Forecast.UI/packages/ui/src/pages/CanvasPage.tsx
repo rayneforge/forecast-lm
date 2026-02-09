@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
     CanvasState,
-    CanvasViewMode,
     CanvasRenderMode,
     CanvasNode,
     CanvasEdge,
@@ -11,12 +10,13 @@ import {
     vec3,
 } from '../canvas/CanvasTypes';
 import { useCanvasState } from '../canvas/useCanvasState';
+import { getDepthLabel } from '../canvas/useLayout';
 import { FreeCanvasView } from '../components/canvas/free-canvas-view/FreeCanvasView';
-import { TimelineView } from '../components/canvas/timeline-view/TimelineView';
-import { LinearView } from '../components/canvas/linear-view/LinearView';
 import { ThreeCanvasView } from '../components/three-canvas/views/ThreeCanvasView';
-import { NarrativePane, NarrativeData, NarrativeClaim } from '../components/canvas/narrative-pane/NarrativePane';
-import { FloatingSearchBar } from '../components/floating-search/FloatingSearchBar';
+import { NavigatorPane } from '../components/canvas/navigator-pane';
+import { NewsFeedPane } from '../components/canvas/side-pane/NewsFeedPane';
+import type { SearchMode } from '../components/canvas/side-pane/NewsFeedPane';
+import type { NewsArticle } from '@rayneforge/logic';
 import './canvas-page.scss';
 
 export interface CanvasPageProps {
@@ -26,45 +26,115 @@ export interface CanvasPageProps {
     initialEdges?: CanvasEdge[];
     /** Pre-populated chain groups */
     initialGroups?: ChainGroup[];
-    /** Starting view mode */
-    initialView?: CanvasViewMode;
     /** Starting camera */
     initialCamera?: Camera3D;
-    /** Narrative data for the side pane */
-    narratives?: NarrativeData[];
-    /** Claims backing the narratives */
-    claims?: NarrativeClaim[];
-    /** Search callback */
-    onSearch?: (query: string) => void;
+
+    /* ── Dock / news feeds ── */
+    /** Daily news articles for the dock */
+    dailyArticles?: NewsArticle[];
+    /** Whether daily news is loading */
+    dailyLoading?: boolean;
+    /** Search results for the dock */
+    searchResults?: NewsArticle[];
+    /** Whether search results are loading */
+    searchLoading?: boolean;
+    /** Fired when user searches from the dock */
+    onSearch?: (query: string, mode?: string) => void;
 }
 
-const VIEW_LABELS: Record<CanvasViewMode, { icon: string; label: string }> = {
-    free: { icon: '🕸', label: 'Canvas' },
-    timeline: { icon: '⏤', label: 'Timeline' },
-    linear: { icon: '☰', label: 'Linear' },
-};
+/* View labels removed — timeline / linear are now layout modes */
 
 export const CanvasPage: React.FC<CanvasPageProps> = ({
     initialNodes = [],
     initialEdges = [],
     initialGroups = [],
-    initialView = 'free',
     initialCamera,
-    narratives = [],
-    claims = [],
+    dailyArticles = [],
+    dailyLoading,
+    searchResults = [],
+    searchLoading,
     onSearch,
 }) => {
-    const { state, dispatch, moveNode, selectNode, setView, setRenderMode, reflow } = useCanvasState({
+    const { state, dispatch, moveNode, selectNode, addEdge, setRenderMode, reflow, drillIn, drillOut, clearLayout } = useCanvasState({
         nodes: initialNodes,
         edges: initialEdges,
         groups: initialGroups,
-        activeView: initialView,
+        activeView: 'free' as const,
         selectedNodeId: null,
         selectedGroupId: null,
         camera: initialCamera ?? { position: vec3(0, 0, 0), zoom: 1 },
     });
 
-    const [narrativePaneOpen, setNarrativePaneOpen] = useState(narratives.length > 0);
+    /* ── Side pane: only one open at a time ('news' | 'navigator' | null) ── */
+    type SidePane = 'news' | 'navigator' | null;
+    const [activePane, setActivePane] = useState<SidePane>('navigator');
+
+    const togglePane = useCallback((pane: 'news' | 'navigator') => {
+        setActivePane(prev => (prev === pane ? null : pane));
+    }, []);
+
+    /* ── External detail pane control (article click → detail) ── */
+    const [externalDetailNodeId, setExternalDetailNodeId] = useState<string | null>(null);
+
+    /* ── Article preview (click in feed → preview in detail pane, no canvas add) ── */
+    const [previewArticle, setPreviewArticle] = useState<NewsArticle | null>(null);
+
+    /** Add a news article as a new ArticleNode on the canvas */
+    const handleAddArticleToCanvas = useCallback(
+        (article: NewsArticle) => {
+            const id = `article-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+            dispatch({
+                type: 'ADD_NODE',
+                node: {
+                    id,
+                    type: 'article',
+                    position: vec3(
+                        -state.camera.position.x + 300 + Math.random() * 100,
+                        -state.camera.position.y + 100 + Math.random() * 100,
+                        state.nodes.length,
+                    ),
+                    data: article,
+                },
+            });
+        },
+        [dispatch, state.camera.position.x, state.camera.position.y, state.nodes.length],
+    );
+
+    /** Click an article in Daily Feed or Search → preview in detail pane (no add) */
+    const handleArticleClick = useCallback(
+        (article: NewsArticle) => {
+            setPreviewArticle(article);
+        },
+        [],
+    );
+
+    /** Add a blank note node (workspace-level action) */
+    const handleAddNote = useCallback(() => {
+        dispatch({
+            type: 'ADD_NODE',
+            node: {
+                id: `note-${Date.now()}`,
+                type: 'note',
+                position: vec3(
+                    -state.camera.position.x + 200,
+                    -state.camera.position.y + 200,
+                    state.nodes.length,
+                ),
+                data: {
+                    title: 'New note',
+                    body: '',
+                    createdAt: new Date().toISOString(),
+                },
+            },
+        });
+    }, [dispatch, state.camera.position.x, state.camera.position.y, state.nodes.length]);
+
+    const handleSearchPaneSearch = useCallback(
+        (query: string, mode: string) => {
+            onSearch?.(query, mode);
+        },
+        [onSearch],
+    );
 
     const handlePan = (delta: Vector3) => {
         dispatch({ type: 'PAN_CAMERA', delta });
@@ -82,83 +152,44 @@ export const CanvasPage: React.FC<CanvasPageProps> = ({
         dispatch({ type: 'REMOVE_GROUP', id });
     };
 
-    /** When clicking an article link inside the narrative pane, select it on canvas */
-    const handleNarrativeArticleSelect = useCallback((articleId: string) => {
-        selectNode(articleId);
-    }, [selectNode]);
+    /** Move all nodes in a chain group by a delta (independent group drag) */
+    const handleMoveGroup = useCallback((groupId: string, delta: Vector3) => {
+        dispatch({ type: 'MOVE_GROUP', id: groupId, position: delta });
+    }, [dispatch]);
+
+    /** Move all nodes in a workspace group by a delta */
+    const handleMoveWSGroup = useCallback((groupId: string, delta: Vector3) => {
+        dispatch({ type: 'MOVE_WORKSPACE_GROUP', id: groupId, position: delta });
+    }, [dispatch]);
+
+    /** Propagate layout from a node (detail-pane Visualize button) */
+    const handleVisualize = useCallback((nodeId: string) => {
+        reflow('propagate', nodeId);
+    }, [reflow]);
 
     return (
         <div className="rf-canvas-page">
-            {/* ── Toolbar ─────────────────────────────────── */}
+            {/* ── Toolbar (slim) ──────────────────────────── */}
             <div className="rf-canvas-page__toolbar">
                 <h2 className="rf-canvas-page__title">Workspace</h2>
 
-                <div className="rf-canvas-page__view-switch">
-                    {(Object.keys(VIEW_LABELS) as CanvasViewMode[]).map(mode => (
-                        <button
-                            key={mode}
-                            className={`rf-canvas-page__view-btn ${
-                                state.activeView === mode ? 'rf-canvas-page__view-btn--active' : ''
-                            }`}
-                            onClick={() => setView(mode)}
-                        >
-                            {VIEW_LABELS[mode].icon} {VIEW_LABELS[mode].label}
-                        </button>
-                    ))}
-                </div>
-
+                {/* ── Side-pane toggles (mutually exclusive) ── */}
                 <button
-                    className="rf-canvas-page__add-btn"
-                    onClick={() =>
-                        dispatch({
-                            type: 'ADD_NODE',
-                            node: {
-                                id: `note-${Date.now()}`,
-                                type: 'note',
-                                position: vec3(
-                                    -state.camera.position.x + 200,
-                                    -state.camera.position.y + 200,
-                                    state.nodes.length,
-                                ),
-                                data: {
-                                    title: 'New note',
-                                    body: '',
-                                    createdAt: new Date().toISOString(),
-                                },
-                            },
-                        })
-                    }
+                    className={`rf-canvas-page__view-btn ${activePane === 'news' ? 'rf-canvas-page__view-btn--active' : ''}`}
+                    onClick={() => togglePane('news')}
+                    title="Toggle news feed & search"
                 >
-                    ＋ Note
+                    📰 News
                 </button>
 
-                {/* ── Layout Reflow ── */}
-                <div className="rf-canvas-page__layout-group">
-                    <button
-                        className="rf-canvas-page__view-btn"
-                        onClick={() => reflow('center')}
-                        title="Center-out: most-connected nodes at centre"
-                    >
-                        ◎ Center
-                    </button>
-                    <button
-                        className="rf-canvas-page__view-btn"
-                        onClick={() => reflow('hierarchy')}
-                        title="Hierarchy: tree layout left → right"
-                    >
-                        ≡ Hierarchy
-                    </button>
-                </div>
-
-                {narratives.length > 0 && (
-                    <button
-                        className={`rf-canvas-page__view-btn ${narrativePaneOpen ? 'rf-canvas-page__view-btn--active' : ''}`}
-                        onClick={() => setNarrativePaneOpen(o => !o)}
-                        title="Toggle narrative pane"
-                    >
-                        📖 Narratives
-                    </button>
-                )}
+                {/* ── Navigator toggle ── */}
+                <button
+                    className={`rf-canvas-page__view-btn ${activePane === 'navigator' ? 'rf-canvas-page__view-btn--active' : ''}`}
+                    onClick={() => togglePane('navigator')}
+                    title="Toggle navigator pane"
+                >
+                    🗂 Navigator
+                </button>
 
                 {/* ── Render mode toggle (only if WebGL available) ── */}
                 {state.deviceCapabilities?.webgl && (
@@ -188,51 +219,91 @@ export const CanvasPage: React.FC<CanvasPageProps> = ({
             {/* ── Active View ─────────────────────────────── */}
             <div className="rf-canvas-page__canvas-area">
                 {state.renderMode === '3d' ? (
-                    /* Layer 1 = Three.js — takes over the entire canvas area */
                     <ThreeCanvasView
                         state={state}
                         onMoveNode={moveNode}
                         onSelectNode={selectNode}
+                        onVisualize={handleVisualize}
+                        dailyFeedProps={{
+                            open: activePane === 'news',
+                            onClose: () => setActivePane(null),
+                            articles: dailyArticles,
+                            loading: dailyLoading,
+                            onAddArticle: handleAddArticleToCanvas,
+                            onArticleClick: handleArticleClick,
+                        }}
+                        searchPaneProps={{
+                            open: activePane === 'news',
+                            onClose: () => setActivePane(null),
+                            results: searchResults,
+                            loading: searchLoading,
+                            onSearch: handleSearchPaneSearch,
+                            onAddArticle: handleAddArticleToCanvas,
+                            onArticleClick: handleArticleClick,
+                        }}
                     />
                 ) : (
-                    /* Layer 1 = 2D CSS transforms */
-                    <>
-                        {state.activeView === 'free' && (
-                            <FreeCanvasView
-                                state={state}
-                                onMoveNode={moveNode}
-                                onSelectNode={selectNode}
-                                onSelectGroup={handleSelectGroup}
-                                onRemoveGroup={handleRemoveGroup}
-                                onPanCamera={handlePan}
-                                onZoom={handleZoom}
-                            />
-                        )}
-
-                        {state.activeView === 'timeline' && (
-                            <TimelineView state={state} onSelectNode={selectNode} />
-                        )}
-
-                        {state.activeView === 'linear' && (
-                            <LinearView state={state} onSelectNode={selectNode} />
-                        )}
-                    </>
+                    <FreeCanvasView
+                        state={state}
+                        onMoveNode={moveNode}
+                        onSelectNode={selectNode}
+                        onSelectGroup={handleSelectGroup}
+                        onRemoveGroup={handleRemoveGroup}
+                        onMoveGroup={handleMoveGroup}
+                        onMoveWorkspaceGroup={handleMoveWSGroup}
+                        onPanCamera={handlePan}
+                        onZoom={handleZoom}
+                        onAddEdge={addEdge}
+                        onVisualize={handleVisualize}
+                        /* Layout controls → workspace GroupFrame */
+                        onReflow={reflow}
+                        onDrillIn={drillIn}
+                        onDrillOut={drillOut}
+                        onClearLayout={clearLayout}
+                        depthLabel={
+                            state.activeLayoutMode
+                                ? getDepthLabel(state.activeLayoutMode, state.layoutDepth)
+                                : undefined
+                        }
+                        onAddNote={handleAddNote}
+                        /* Article click → detail pane */
+                        externalDetailNodeId={externalDetailNodeId}
+                        onExternalDetailConsumed={() => setExternalDetailNodeId(null)}
+                        /* Article preview (click in feed, no add) */
+                        previewArticle={previewArticle}
+                        onPreviewArticleClear={() => setPreviewArticle(null)}
+                        /* Group-by actions from detail pane */
+                        onGroupByDate={() => reflow('group-date')}
+                        onGroupByLocation={() => reflow('group-location')}
+                    />
                 )}
 
-                {/* ── Narrative Side Pane ─────────────────────── */}
-                {narratives.length > 0 && (
-                    <NarrativePane
-                        narratives={narratives}
-                        claims={claims}
-                        open={narrativePaneOpen}
-                        onToggle={() => setNarrativePaneOpen(o => !o)}
-                        onSelectArticle={handleNarrativeArticleSelect}
+                {/* ── Navigator (right side) ── */}
+                <NavigatorPane
+                    state={state}
+                    open={activePane === 'navigator'}
+                    onToggle={() => togglePane('navigator')}
+                    onSelectNode={(nodeId) => {
+                        selectNode(nodeId);
+                        setExternalDetailNodeId(nodeId);
+                    }}
+                />
+
+                {/* ── News Feed (right side — unified daily + search) ── */}
+                {state.renderMode !== '3d' && (
+                    <NewsFeedPane
+                        open={activePane === 'news'}
+                        onClose={() => setActivePane(null)}
+                        dailyArticles={dailyArticles}
+                        dailyLoading={dailyLoading}
+                        searchResults={searchResults}
+                        searchLoading={searchLoading}
+                        onSearch={handleSearchPaneSearch}
+                        onAddArticle={handleAddArticleToCanvas}
+                        onArticleClick={handleArticleClick}
                     />
                 )}
             </div>
-
-            {/* ── Floating Search ─────────────────────────── */}
-            <FloatingSearchBar onSearch={onSearch ?? (() => {})} />
         </div>
     );
 };

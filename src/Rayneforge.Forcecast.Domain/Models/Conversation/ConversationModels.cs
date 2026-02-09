@@ -42,6 +42,10 @@ public sealed record ConversationThread
 {
     public required string Id { get; init; }
     public required string UserId { get; init; }
+
+    /// <summary>Optional workspace this thread is scoped to. Null = global thread.</summary>
+    public string? WorkspaceId { get; init; }
+
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? LastMessageAt { get; init; }
     

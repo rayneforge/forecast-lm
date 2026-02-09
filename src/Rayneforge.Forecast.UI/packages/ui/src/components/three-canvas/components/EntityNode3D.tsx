@@ -1,37 +1,54 @@
-import React, { useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
+import * as THREE from 'three';
 import { ThreeEvent } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import { EntityNode as EntityNodeData, Vector3 as V3 } from '../../../canvas/CanvasTypes';
 import { TextLabel, FontSize } from './TextLabel';
 import { Theme, toWorld, NodeSize } from './theme3d';
 import { useDrag3D } from './useDrag3D';
+import { useNodeRef } from './ScenePhysicsContext';
 
 // ─── EntityNode3D ───────────────────────────────────────────────
 // BlueViolet-accented card showing entity type pill, name, description.
-// Matches the 2D EntityNodeComponent hierarchy.
+// Position driven imperatively by PhysicsTicker.
 
 export interface EntityNode3DProps {
     node: EntityNodeData;
     selected?: boolean;
     onSelect: (id: string) => void;
     onMove: (id: string, pos: V3) => void;
+    onDragStart?: (id: string) => void;
+    onDragEnd?: (id: string, pos: V3, velocity: V3) => void;
 }
 
 export const EntityNode3D: React.FC<EntityNode3DProps> = ({
-    node, selected, onSelect, onMove,
+    node, selected, onSelect, onMove, onDragStart, onDragEnd,
 }) => {
     const { w, h, depth } = NodeSize.entity;
+    const setGroupRef = useNodeRef(node.id);
+    const groupRef = useRef<THREE.Group>(null);
     const [hovered, setHovered] = useState(false);
 
     const px = toWorld(node.position.x);
     const py = -toWorld(node.position.y);
     const pz = toWorld(node.position.z);
 
+    const getCurrentPosition = useCallback((): [number, number, number] => {
+        if (groupRef.current) {
+            const p = groupRef.current.position;
+            return [p.x, p.y, p.z];
+        }
+        return [px, py, pz];
+    }, [px, py, pz]);
+
     const { isDragging, bind: dragBind } = useDrag3D({
         id: node.id,
         position: [px, py, pz],
+        getCurrentPosition,
         locked: node.locked,
         onMove,
+        onStart: onDragStart,
+        onEnd: onDragEnd,
     });
 
     const handleClick = (e: ThreeEvent<MouseEvent>) => {
@@ -39,8 +56,14 @@ export const EntityNode3D: React.FC<EntityNode3DProps> = ({
         onSelect(node.id);
     };
 
+    const combinedRef = useCallback((group: THREE.Group | null) => {
+        (groupRef as React.MutableRefObject<THREE.Group | null>).current = group;
+        setGroupRef(group);
+    }, [setGroupRef]);
+
     return (
         <group
+            ref={combinedRef}
             position={[px, py, pz]}
             onClick={handleClick}
             onPointerOver={() => setHovered(true)}

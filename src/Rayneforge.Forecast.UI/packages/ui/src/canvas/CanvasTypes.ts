@@ -3,6 +3,7 @@
 // In 2D mode z drives z-index layering; in XR it becomes true depth.
 
 import { NewsArticle } from '@rayneforge/logic';
+import type { LayoutMode, LayoutGroup } from './useLayout';
 
 // ─── Spatial Primitives ─────────────────────────────────────────
 
@@ -35,7 +36,7 @@ export const distVec3 = (a: Vector3, b: Vector3): number =>
 
 // ─── Node Types ─────────────────────────────────────────────────
 
-export type CanvasNodeType = 'article' | 'note' | 'topic' | 'entity';
+export type CanvasNodeType = 'article' | 'note' | 'entity' | 'narrative' | 'claim';
 
 interface BaseNode {
     id: string;
@@ -73,15 +74,27 @@ export interface EntityNode extends BaseNode {
     };
 }
 
-export interface TopicBubble extends BaseNode {
-    type: 'topic';
+export interface NarrativeNode extends BaseNode {
+    type: 'narrative';
     data: {
         label: string;
-        weight: number; // 0‑1, controls visual size
+        category: string;          // matches NarrativeCategory enum
+        justification?: string;
+        evidencePosture: string;   // New | Synthesis | Commentary
+        temporalFocus: string;     // Immediate | Ongoing | LongTerm
     };
 }
 
-export type CanvasNode = ArticleNode | NoteNode | TopicBubble | EntityNode;
+export interface ClaimNode extends BaseNode {
+    type: 'claim';
+    data: {
+        normalizedText: string;
+        articleId: string;
+        articleTitle?: string;     // resolved display name
+    };
+}
+
+export type CanvasNode = ArticleNode | NoteNode | EntityNode | NarrativeNode | ClaimNode;
 
 // ─── Edges ──────────────────────────────────────────────────────
 
@@ -105,9 +118,27 @@ export interface ChainGroup {
     color?: string;
 }
 
+// ─── Workspace Groups (visual grouping on canvas) ───────────────
+
+/** A workspace rendered as a GroupFrame on the canvas */
+export interface WorkspaceGroup {
+    /** Matches the API workspace id */
+    id: string;
+    label: string;
+    /** Canvas node ids belonging to this workspace */
+    nodeIds: string[];
+    /** Position on canvas (top-left of frame) */
+    position: Vector3;
+    color?: string;
+}
+
+// ─── Dock panels ────────────────────────────────────────────────
+
+export type DockPanelId = 'daily' | 'search';
+
 // ─── View Modes ─────────────────────────────────────────────────
 
-export type CanvasViewMode = 'free' | 'timeline' | 'linear';
+export type CanvasViewMode = 'free';
 
 // ─── Rendering & Presentation (3-Layer Model) ───────────────────
 //
@@ -225,6 +256,8 @@ export interface CanvasState {
     nodes: CanvasNode[];
     edges: CanvasEdge[];
     groups: ChainGroup[];
+    /** Workspaces as visual group frames on the canvas */
+    workspaceGroups: WorkspaceGroup[];
     activeView: CanvasViewMode;
     selectedNodeId: string | null;
     selectedGroupId: string | null;
@@ -235,6 +268,16 @@ export interface CanvasState {
     presentationMode: PresentationMode;
     /** Detected once on mount, never changes */
     deviceCapabilities: DeviceCapabilities | null;
+    /** Pending layout targets for animated transitions (consumed by physics hook) */
+    layoutTargets: Map<string, Vector3> | null;
+    /** Currently active layout mode (null = no layout applied) */
+    activeLayoutMode: LayoutMode | null;
+    /** Drill depth for group-by-date / group-by-location (0=shallowest) */
+    layoutDepth: number;
+    /** Ephemeral visual groups produced by the active group-by layout */
+    layoutGroups: LayoutGroup[];
+    /** Which dock panel is expanded (null = collapsed) */
+    activeDockPanel: DockPanelId | null;
 }
 
 // ─── Action Types ───────────────────────────────────────────────
@@ -252,10 +295,22 @@ export type CanvasAction =
     | { type: 'ADD_NODE_TO_GROUP'; nodeId: string; groupId: string }
     | { type: 'REMOVE_NODE_FROM_GROUP'; nodeId: string; groupId: string }
     | { type: 'SELECT_GROUP'; id: string | null }
+    | { type: 'MOVE_GROUP'; id: string; position: Vector3 }
     | { type: 'SET_CAMERA'; camera: Partial<Camera3D> }
     | { type: 'PAN_CAMERA'; delta: Vector3 }
     // ── Layout ──
-    | { type: 'APPLY_LAYOUT'; positions: Map<string, Vector3> }
+    | { type: 'APPLY_LAYOUT'; positions: Map<string, Vector3>; groups: LayoutGroup[]; mode: LayoutMode; depth: number }
+    | { type: 'SET_LAYOUT_TARGETS'; targets: Map<string, Vector3> }
+    | { type: 'SET_LAYOUT_DEPTH'; depth: number }
+    | { type: 'CLEAR_LAYOUT_GROUPS' }
+    // ── Workspace groups ──
+    | { type: 'ADD_WORKSPACE_GROUP'; group: WorkspaceGroup }
+    | { type: 'REMOVE_WORKSPACE_GROUP'; id: string }
+    | { type: 'ADD_NODE_TO_WORKSPACE'; nodeId: string; workspaceId: string }
+    | { type: 'REMOVE_NODE_FROM_WORKSPACE'; nodeId: string; workspaceId: string }
+    | { type: 'MOVE_WORKSPACE_GROUP'; id: string; position: Vector3 }
+    // ── Dock ──
+    | { type: 'SET_DOCK_PANEL'; panel: DockPanelId | null }
     // ── Layer 1 + 2 switching ──
     | { type: 'SET_RENDER_MODE'; mode: CanvasRenderMode }
     | { type: 'SET_PRESENTATION_MODE'; mode: PresentationMode }

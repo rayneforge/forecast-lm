@@ -8,24 +8,36 @@ export interface ArticleNodeProps {
     node: ArticleNodeData;
     selected?: boolean;
     zoom?: number;
+    /** Physics-interpolated position (if provided, overrides node.position for rendering) */
+    renderPosition?: Vector3;
     onMove: (id: string, position: Vector3) => void;
     onSelect: (id: string) => void;
-    onAnchorDragStart?: (nodeId: string, anchor: string) => void;
+    onDragStart?: (id: string) => void;
+    onDragEnd?: (id: string, position: Vector3, velocity: Vector3) => void;
+    onAnchorDragStart?: (nodeId: string, anchor: string, pointerId: number) => void;
 }
 
 export const ArticleNodeComponent: React.FC<ArticleNodeProps> = ({
-    node, selected, zoom = 1, onMove, onSelect, onAnchorDragStart,
+    node, selected, zoom = 1, renderPosition, onMove, onSelect, onDragStart, onDragEnd, onAnchorDragStart,
 }) => {
+    const pos = renderPosition ?? node.position;
+
     const handleMove = useCallback(
-        (pos: Vector3) => onMove(node.id, pos),
+        (p: Vector3) => onMove(node.id, p),
         [node.id, onMove],
     );
 
+    const handleEnd = useCallback(
+        (p: Vector3, v: Vector3) => onDragEnd?.(node.id, p, v),
+        [node.id, onDragEnd],
+    );
+
     const { dragHandlers, isDragging } = useDrag({
-        position: node.position,
+        position: pos,
         zoom,
         onMove: handleMove,
-        onStart: () => onSelect(node.id),
+        onEnd: handleEnd,
+        onStart: () => { onSelect(node.id); onDragStart?.(node.id); },
         disabled: node.locked,
     });
 
@@ -47,9 +59,8 @@ export const ArticleNodeComponent: React.FC<ArticleNodeProps> = ({
         <div
             className={cls}
             style={{
-                left: node.position.x,
-                top: node.position.y,
-                zIndex: Math.round(node.position.z) + (isDragging.current ? 10000 : 0),
+                transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`,
+                zIndex: Math.round(pos.z) + (isDragging.current ? 10000 : 0),
             }}
             {...dragHandlers}
         >
@@ -61,11 +72,18 @@ export const ArticleNodeComponent: React.FC<ArticleNodeProps> = ({
                         className={`rf-article-node__anchor rf-article-node__anchor--${dir}`}
                         onPointerDown={e => {
                             e.stopPropagation();
-                            onAnchorDragStart?.(node.id, dir);
+                            onAnchorDragStart?.(node.id, dir, e.pointerId);
                         }}
                     />
                 ))}
             </div>
+
+            {node.data.imageUrl && (
+                <div 
+                    className="rf-article-node__image" 
+                    style={{ backgroundImage: `url(${node.data.imageUrl})` }}
+                />
+            )}
 
             <div className="rf-article-node__meta">
                 <span>{node.data.source.name}</span>

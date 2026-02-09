@@ -20,7 +20,8 @@ export const Theme = {
     // Semantic / node colours
     noteGold:       0xD29922,
     entityViolet:   0x8A2BE2,
-    topicCyan:      0x00D2FF,
+    narrativeGreen: 0x3FB950,
+    claimOrange:    0xF0883E,
     groupCyan:      0x00D2FF,
 
     // Edges
@@ -58,9 +59,10 @@ export function toWorld(px: number): number {
 // ─── Node sizing (world units) ──────────────────────────────────
 
 export const NodeSize = {
-    article:  { w: 2.6, h: 1.2, depth: 0.06 },
-    note:     { w: 2.2, h: 1.0, depth: 0.04 },
-    entity:   { w: 2.0, h: 0.9, depth: 0.05 },
-    topic:    { radius: 0.5 },                    // sphere
-    group:    { padding: 0.3, depth: 0.02 },
+    article:    { w: 2.6, h: 1.2, depth: 0.06 },
+    note:       { w: 2.2, h: 1.0, depth: 0.04 },
+    entity:     { w: 2.0, h: 0.9, depth: 0.05 },
+    narrative:  { w: 2.8, h: 1.3, depth: 0.06 },
+    claim:      { w: 2.4, h: 1.0, depth: 0.04 },
+    group:      { padding: 0.3, depth: 0.02 },
 } as const;

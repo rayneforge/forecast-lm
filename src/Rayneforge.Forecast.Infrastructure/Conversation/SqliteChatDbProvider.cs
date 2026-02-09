@@ -7,13 +7,13 @@ using Rayneforge.Forecast.Infrastructure.Data;
 
 /// <summary>
 /// SQLite implementation of <see cref="IChatDbProvider"/>.
-/// Backed by <see cref="SqliteConversationDbContext"/>.
+/// Backed by <see cref="SqliteUserDbContext"/>.
 /// </summary>
 public sealed class SqliteChatDbProvider : IChatDbProvider
 {
-    private readonly SqliteConversationDbContext _db;
+    private readonly SqliteUserDbContext _db;
 
-    public SqliteChatDbProvider(SqliteConversationDbContext db)
+    public SqliteChatDbProvider(SqliteUserDbContext db)
     {
         _db = db;
     }

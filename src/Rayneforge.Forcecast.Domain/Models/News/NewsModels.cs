@@ -2,7 +2,6 @@ namespace Rayneforge.Forecast.Domain.Models;
 
 using Rayneforge.Forecast.Domain.Abstractions;
 using Rayneforge.Forecast.Domain.Attributes;
-using System.Reflection;
 
 public record NewsSource
 {
@@ -56,26 +55,9 @@ public record NewsArticle : ISemanticEntity
     
     public NewsArticle() {}
 
-    public static string GetSchemaDescription()
-    {
-        var sb = new System.Text.StringBuilder();
-        sb.AppendLine($"Entity: {typeof(NewsArticle).Name}");
-        
-        foreach (var prop in typeof(NewsArticle).GetProperties(BindingFlags.Public | BindingFlags.Instance))
-        {
-            var attr = prop.GetCustomAttribute<FilterableAttribute>();
-            if (attr == null) continue;
-            
-            var typeName = prop.PropertyType.Name;
-            if (prop.PropertyType == typeof(string)) typeName = "string";
-            else if (prop.PropertyType == typeof(DateTimeOffset)) typeName = "datetime";
-            else if (prop.PropertyType == typeof(NewsSource)) typeName = "Object(Name)";
+    public static EntitySchema GetSchema() => EntitySchemaBuilder.Build<NewsArticle>();
 
-            var desc = attr.Description != null ? $" - {attr.Description}" : "";
-            sb.AppendLine($"- {prop.Name} ({typeName}){desc}");
-        }
-        return sb.ToString();
-    }
+    public static string GetSchemaDescription() => SchemaFormatter.ToText(GetSchema());
 }
 
 public record NewsResult(

@@ -20,7 +20,7 @@ builder.AddNewsRepository();
 builder.AddEmbeddingsProvider();
 builder.AddLLMProvider();
 builder.AddMessageBus();
-builder.AddConversationStore();
+builder.AddUserStore();
 builder.AddAgentService();
 
 builder.Services

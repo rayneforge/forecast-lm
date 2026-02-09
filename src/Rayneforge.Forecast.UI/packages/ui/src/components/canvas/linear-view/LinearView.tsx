@@ -1,6 +1,6 @@
 import React from 'react';
 import { CanvasState } from '../../../canvas/CanvasTypes';
-import { StoryStrip } from '../../story-strip/StoryStrip';
+import { NewsCard } from '../../news-card/NewsCard';
 import { ConnectorBand } from '../../connector-band/ConnectorBand';
 import './linear-view.scss';
 
@@ -12,10 +12,10 @@ export interface LinearViewProps {
 export const LinearView: React.FC<LinearViewProps> = ({ state, onSelectNode }) => {
     // Sort by date (newest first)
     const sorted = [...state.nodes]
-        .filter(n => n.type === 'article' || n.type === 'note')
+        .filter(n => n.type === 'article' || n.type === 'note' || n.type === 'narrative' || n.type === 'claim')
         .sort((a, b) => {
-            const dateA = a.type === 'article' ? a.data.publishedAt : a.data.createdAt;
-            const dateB = b.type === 'article' ? b.data.publishedAt : b.data.createdAt;
+            const dateA = a.type === 'article' ? a.data.publishedAt : a.type === 'note' ? a.data.createdAt : '';
+            const dateB = b.type === 'article' ? b.data.publishedAt : b.type === 'note' ? b.data.createdAt : '';
             return new Date(dateB).getTime() - new Date(dateA).getTime();
         });
 
@@ -48,10 +48,8 @@ export const LinearView: React.FC<LinearViewProps> = ({ state, onSelectNode }) =
                             )}
 
                             {node.type === 'article' && (
-                                <StoryStrip
+                                <NewsCard
                                     article={node.data}
-                                    state={state.selectedNodeId === node.id ? 'peek' : 'collapsed'}
-                                    onExpand={() => onSelectNode(node.id)}
                                     onPin={() => onSelectNode(node.id)}
                                 />
                             )}
@@ -66,6 +64,36 @@ export const LinearView: React.FC<LinearViewProps> = ({ state, onSelectNode }) =
                                         <h4 className="rf-linear-view__note-card__title">{node.data.title}</h4>
                                     </div>
                                     <p className="rf-linear-view__note-card__body">{node.data.body}</p>
+                                </div>
+                            )}
+
+                            {node.type === 'narrative' && (
+                                <div
+                                    className="rf-linear-view__note-card"
+                                    onClick={() => onSelectNode(node.id)}
+                                >
+                                    <div className="rf-linear-view__note-card__header">
+                                        <span className="rf-linear-view__note-card__icon">📊</span>
+                                        <h4 className="rf-linear-view__note-card__title">{node.data.label}</h4>
+                                    </div>
+                                    {node.data.justification && (
+                                        <p className="rf-linear-view__note-card__body">{node.data.justification}</p>
+                                    )}
+                                </div>
+                            )}
+
+                            {node.type === 'claim' && (
+                                <div
+                                    className="rf-linear-view__note-card"
+                                    onClick={() => onSelectNode(node.id)}
+                                >
+                                    <div className="rf-linear-view__note-card__header">
+                                        <span className="rf-linear-view__note-card__icon">💬</span>
+                                        <h4 className="rf-linear-view__note-card__title">{node.data.normalizedText}</h4>
+                                    </div>
+                                    {node.data.articleTitle && (
+                                        <p className="rf-linear-view__note-card__body">📄 {node.data.articleTitle}</p>
+                                    )}
                                 </div>
                             )}
                         </React.Fragment>

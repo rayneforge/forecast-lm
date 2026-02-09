@@ -8,7 +8,25 @@
     pointer-events: none;
     min-width: 100px;
     min-height: 60px;
-    transition: border-color $motion-normal;
+    transition: border-color $motion-normal, background-color $motion-normal;
+
+    // ── Variant: layout (group-by algorithm) ──
+    &--layout {
+        border-style: dashed;
+    }
+
+    // ── Variant: workspace ──
+    &--workspace {
+        border-style: solid;
+        border-color: $color-accent-primary;
+        background: rgba(0, 210, 255, 0.015);
+        border-radius: $radius-xl;
+    }
+
+    // ── Variant: chain (user-created, default) ──
+    &--chain {
+        border-style: dashed;
+    }
 
     &--selected {
         border-color: $color-accent-primary;
@@ -25,10 +43,23 @@
         letter-spacing: 0.5px;
         color: $color-accent-primary;
         pointer-events: auto;
-        cursor: pointer;
+        cursor: grab;
         background: $color-canvas-board;
         padding: 0 $spacing-2;
         border-radius: $radius-sm;
+        white-space: nowrap;
+        user-select: none;
+        touch-action: none;
+
+        &:active {
+            cursor: grabbing;
+        }
+    }
+
+    &--workspace &__label {
+        text-transform: none;
+        font-size: $font-size-body;
+        letter-spacing: 0;
     }
 
     &__toolbar {
@@ -45,5 +76,71 @@
     &--selected &__toolbar,
     &:hover &__toolbar {
         opacity: 1;
+    }
+
+    // ── Workspace in-canvas layout controls ──
+    &__ws-controls {
+        position: absolute;
+        bottom: $spacing-2;
+        left: $spacing-3;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        pointer-events: auto;
+        background: rgba($color-canvas-surface, 0.85);
+        backdrop-filter: blur(8px);
+        border: 1px solid $color-border-subtle;
+        border-radius: $radius-md;
+        padding: 2px;
+    }
+
+    &__ws-btn {
+        all: unset;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 3px 8px;
+        font-size: 12px;
+        color: $color-text-secondary;
+        border-radius: calc(#{$radius-md} - 2px);
+        transition: all $motion-fast;
+        white-space: nowrap;
+
+        &:hover {
+            color: $color-text-primary;
+            background: rgba($color-accent-primary, 0.08);
+        }
+
+        &--active {
+            background: rgba($color-accent-primary, 0.15);
+            color: $color-accent-primary;
+            font-weight: 600;
+        }
+
+        &:disabled {
+            opacity: 0.35;
+            cursor: default;
+        }
+    }
+
+    &__ws-sep {
+        display: inline-block;
+        width: 1px;
+        height: 16px;
+        background: $color-border-subtle;
+        margin: 0 2px;
+    }
+
+    &__ws-depth {
+        font-size: 10px;
+        font-weight: 700;
+        color: $color-accent-primary;
+        background: rgba($color-accent-primary, 0.12);
+        border-radius: $radius-sm;
+        padding: 1px 4px;
+        min-width: 16px;
+        text-align: center;
+        user-select: none;
     }
 }
