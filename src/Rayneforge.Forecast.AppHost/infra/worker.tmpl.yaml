@@ -1,0 +1,118 @@
+api-version: 2024-02-02-preview
+location: {{ .Env.AZURE_LOCATION }}
+identity:
+  type: UserAssigned
+  userAssignedIdentities:
+    ? "{{ .Env.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID }}"
+    : {}
+properties:
+  environmentId: {{ .Env.AZURE_CONTAINER_APPS_ENVIRONMENT_ID }}
+  configuration:
+    activeRevisionsMode: single
+    runtime:
+      dotnet:
+        autoConfigureDataProtection: true
+    registries:
+      - server: {{ .Env.AZURE_CONTAINER_REGISTRY_ENDPOINT }}
+        identity: {{ .Env.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID }}
+    secrets:
+      - name: connectionstrings--newsdb
+        value: AccountEndpoint={{ .Env.COSMOS_CONNECTIONSTRING }};Database=NewsDb
+      - name: connectionstrings--article-ingest
+        value: Endpoint={{ .Env.MESSAGING_SERVICEBUSENDPOINT }};EntityPath=article-ingest
+      - name: connectionstrings--blobs
+        value: '{{ .Env.STORAGE_BLOBENDPOINT }}'
+      - name: connectionstrings--chat-basic
+        value: '{{ .Env.AOAI_CONNECTIONSTRING }};Deployment=chat-basic'
+      - name: connectionstrings--chat-lite
+        value: '{{ .Env.AOAI_CONNECTIONSTRING }};Deployment=chat-lite'
+      - name: connectionstrings--embeddings
+        value: '{{ .Env.AOAI_CONNECTIONSTRING }};Deployment=embeddings'
+      - name: connectionstrings--messaging
+        value: '{{ .Env.MESSAGING_SERVICEBUSENDPOINT }}'
+      - name: newsdb-uri
+        value: '{{ .Env.COSMOS_CONNECTIONSTRING }}'
+  template:
+    containers:
+      - image: {{ .Image }}
+        name: worker
+        env:
+          - name: AZURE_CLIENT_ID
+            value: {{ .Env.MANAGED_IDENTITY_CLIENT_ID }}
+          - name: ARTICLE_INGEST_HOST
+            value: '{{ .Env.MESSAGING_SERVICEBUSHOSTNAME }}'
+          - name: ARTICLE_INGEST_QUEUENAME
+            value: article-ingest
+          - name: ARTICLE_INGEST_URI
+            value: '{{ .Env.MESSAGING_SERVICEBUSENDPOINT }}'
+          - name: AzureWebJobsStorage
+            value: '{{ .Env.STORAGE_BLOBENDPOINT }}'
+          - name: BLOBS_URI
+            value: '{{ .Env.STORAGE_BLOBENDPOINT }}'
+          - name: CHAT_BASIC_MODELNAME
+            value: chat-basic
+          - name: CHAT_BASIC_URI
+            value: '{{ .Env.AOAI_ENDPOINT }}'
+          - name: CHAT_LITE_MODELNAME
+            value: chat-lite
+          - name: CHAT_LITE_URI
+            value: '{{ .Env.AOAI_ENDPOINT }}'
+          - name: EMBEDDINGS_MODELNAME
+            value: embeddings
+          - name: EMBEDDINGS_URI
+            value: '{{ .Env.AOAI_ENDPOINT }}'
+          - name: LLM__AzureOpenAI__BasicDeployment
+            value: chat-basic
+          - name: LLM__AzureOpenAI__Endpoint
+            value: https://YOUR_RESOURCE.openai.azure.com/
+          - name: LLM__AzureOpenAI__LiteDeployment
+            value: chat-lite
+          - name: LLM__AzureOpenAI__UseManagedIdentity
+            value: "true"
+          - name: MESSAGING_HOST
+            value: '{{ .Env.MESSAGING_SERVICEBUSHOSTNAME }}'
+          - name: MESSAGING_URI
+            value: '{{ .Env.MESSAGING_SERVICEBUSENDPOINT }}'
+          - name: NEWSDB_DATABASENAME
+            value: NewsDb
+          - name: NewsApi__ApiKey
+            value: ""
+          - name: OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES
+            value: "true"
+          - name: OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES
+            value: "true"
+          - name: OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY
+            value: in_memory
+          - name: Providers__Database
+            value: cosmos
+          - name: Providers__Embedding
+            value: azureopenai
+          - name: Providers__LLM
+            value: azureopenai
+          - name: Providers__MessageBus
+            value: azureservicebus
+          - name: Providers__News
+            value: newsapi
+          - name: ServiceBusConnection
+            value: '{{ .Env.MESSAGING_SERVICEBUSENDPOINT }}'
+          - name: ConnectionStrings__NewsDb
+            secretRef: connectionstrings--newsdb
+          - name: ConnectionStrings__article-ingest
+            secretRef: connectionstrings--article-ingest
+          - name: ConnectionStrings__blobs
+            secretRef: connectionstrings--blobs
+          - name: ConnectionStrings__chat-basic
+            secretRef: connectionstrings--chat-basic
+          - name: ConnectionStrings__chat-lite
+            secretRef: connectionstrings--chat-lite
+          - name: ConnectionStrings__embeddings
+            secretRef: connectionstrings--embeddings
+          - name: ConnectionStrings__messaging
+            secretRef: connectionstrings--messaging
+          - name: NEWSDB_URI
+            secretRef: newsdb-uri
+    scale:
+      minReplicas: 1
+tags:
+  azd-service-name: worker
+  aspire-resource-name: worker

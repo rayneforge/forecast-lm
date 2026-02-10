@@ -1,0 +1,273 @@
+@use "@rayneforge/styles" as *;
+
+// ─── Chat-style Feed Center ─────────────────────────────────────
+// Scrollable message thread with enriched results.
+
+.rf-feed-center {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    // ── Scrollable thread ──
+    &__thread {
+        flex: 1;
+        overflow-y: auto;
+        padding: $spacing-4;
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-3;
+
+        &::-webkit-scrollbar { width: 6px; }
+        &::-webkit-scrollbar-track { background: transparent; }
+        &::-webkit-scrollbar-thumb {
+            background: rgba($color-text-muted, 0.2);
+            border-radius: 3px;
+            &:hover { background: rgba($color-text-muted, 0.35); }
+        }
+    }
+
+    // ── Welcome state (no messages yet) ──
+    &__welcome {
+        text-align: center;
+        padding: $spacing-6 0 $spacing-2;
+    }
+
+    &__welcome-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: $color-text-primary;
+        margin-bottom: $spacing-1;
+    }
+
+    &__welcome-sub {
+        font-size: $font-size-meta;
+        color: $color-text-muted;
+    }
+
+    &__loading {
+        text-align: center;
+        padding: $spacing-4;
+        color: $color-text-muted;
+        font-size: $font-size-body;
+    }
+}
+
+// ─── Message Bubble ─────────────────────────────────────────────
+
+.rf-msg {
+    display: flex;
+    gap: $spacing-2;
+    max-width: 85%;
+    animation: rf-msg-in $motion-normal $ease-standard;
+
+    &--user {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+    }
+
+    &--assistant,
+    &--system {
+        align-self: flex-start;
+    }
+
+    &__avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: $radius-full;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        flex-shrink: 0;
+        background: rgba($color-border-subtle, 0.3);
+        margin-top: 2px;
+    }
+
+    &__body {
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-1;
+        min-width: 0;
+    }
+
+    &__header {
+        display: flex;
+        align-items: baseline;
+        gap: $spacing-2;
+    }
+
+    &__author {
+        font-size: $font-size-meta;
+        font-weight: 600;
+        color: $color-text-secondary;
+    }
+
+    &__time {
+        font-size: 10px;
+        color: $color-text-muted;
+    }
+
+    &__text {
+        font-size: $font-size-body;
+        color: $color-text-primary;
+        line-height: 1.5;
+        background: rgba($color-canvas-surface, 0.6);
+        padding: $spacing-2 $spacing-3;
+        border-radius: $radius-md;
+        border: 1px solid $color-border-subtle;
+    }
+
+    &--user &__text {
+        background: rgba($color-accent-primary, 0.08);
+        border-color: rgba($color-accent-primary, 0.2);
+    }
+
+    // ── Reference pills ──
+    &__refs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: $spacing-1;
+    }
+
+    &__ref {
+        all: unset;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px $spacing-2;
+        border-radius: $radius-full;
+        font-size: $font-size-meta;
+        white-space: nowrap;
+        max-width: 220px;
+        transition: all $motion-fast $ease-standard;
+
+        &--article {
+            background: rgba(#58a6ff, 0.12);
+            color: #58a6ff;
+            &:hover { background: rgba(#58a6ff, 0.22); }
+        }
+        &--narrative {
+            background: rgba(#f0883e, 0.12);
+            color: #f0883e;
+            &:hover { background: rgba(#f0883e, 0.22); }
+        }
+        &--claim {
+            background: rgba(#E06C75, 0.12);
+            color: #E06C75;
+            &:hover { background: rgba(#E06C75, 0.22); }
+        }
+        &--entity {
+            background: rgba(#7ee787, 0.12);
+            color: #7ee787;
+            &:hover { background: rgba(#7ee787, 0.22); }
+        }
+    }
+
+    &__ref-icon {
+        font-size: 11px;
+        flex-shrink: 0;
+    }
+
+    // ── Inline article cards in messages ──
+    &__articles {
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-2;
+        margin-top: $spacing-2;
+    }
+}
+
+@keyframes rf-msg-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+// ─── Feed Article Card ──────────────────────────────────────────
+
+.rf-feed-card {
+    width: 100%;
+    max-width: 560px;
+    background: $color-canvas-surface;
+    border: 1px solid $color-border-subtle;
+    border-radius: $radius-md;
+    padding: $spacing-3 $spacing-4;
+    cursor: pointer;
+    position: relative;
+    transition: all $motion-fast $ease-standard;
+
+    &--compact {
+        max-width: 100%;
+        padding: $spacing-2 $spacing-3;
+    }
+
+    &:hover {
+        border-color: $color-accent-primary;
+        box-shadow: $elevation-1;
+    }
+
+    &__row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: $spacing-1;
+    }
+
+    &__source {
+        font-size: $font-size-meta;
+        font-weight: 600;
+        color: $color-text-secondary;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    &__date {
+        font-size: $font-size-meta;
+        color: $color-text-muted;
+    }
+
+    &__title {
+        font-size: $font-size-body;
+        font-weight: 600;
+        color: $color-text-primary;
+        line-height: $line-height-tight;
+    }
+
+    &__desc {
+        margin-top: $spacing-1;
+        font-size: $font-size-meta;
+        color: $color-text-secondary;
+        line-height: $line-height-normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    &__pin {
+        all: unset;
+        cursor: pointer;
+        position: absolute;
+        top: $spacing-2;
+        right: $spacing-2;
+        font-size: $font-size-meta;
+        color: $color-text-muted;
+        padding: $spacing-1 $spacing-2;
+        border-radius: $radius-sm;
+        background: rgba($color-canvas-surface, 0.9);
+        border: 1px solid $color-border-subtle;
+        opacity: 0;
+        transition: all $motion-fast;
+
+        &:hover {
+            color: $color-accent-primary;
+            border-color: $color-accent-primary;
+        }
+    }
+
+    &:hover &__pin {
+        opacity: 1;
+    }
+}

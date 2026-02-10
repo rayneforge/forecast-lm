@@ -344,8 +344,8 @@ function placeGroupedBuckets(
 
 // ─── Depth label helpers ────────────────────────────────────────
 
-const DATE_DEPTH_LABELS  = ['Year', 'Month', 'Day'];
-const LOC_DEPTH_LABELS   = ['Top-level', 'Region', 'Sub-region', 'Country', 'Province', 'City'];
+const DATE_DEPTH_LABELS  = ['Yearly', 'Monthly', 'Daily'];
+const LOC_DEPTH_LABELS   = ['Continental', 'Regional', 'National', 'Provincial', 'Municipal', 'Local'];
 
 /**
  * Human-readable label for the current drill depth.
@@ -472,7 +472,15 @@ function layoutPropagate(
         }
     }
 
-    return { positions, groups: [] };
+    // Build groups from BFS rings so the flow view can display them
+    const ringLabels = ['Root', '1st degree', '2nd degree', '3rd degree'];
+    const groups: LayoutGroup[] = rings.map((ring, i) => ({
+        id: `ring-${i}`,
+        label: i < ringLabels.length ? ringLabels[i] : `${i}th degree`,
+        nodeIds: ring,
+    }));
+
+    return { positions, groups };
 }
 
 // ─── 3. Group-by-Date ───────────────────────────────────────────

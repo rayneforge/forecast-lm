@@ -15,10 +15,12 @@ export interface ArticleNodeProps {
     onDragStart?: (id: string) => void;
     onDragEnd?: (id: string, position: Vector3, velocity: Vector3) => void;
     onAnchorDragStart?: (nodeId: string, anchor: string, pointerId: number) => void;
+    layoutMode?: 'flow' | 'absolute';
 }
 
 export const ArticleNodeComponent: React.FC<ArticleNodeProps> = ({
     node, selected, zoom = 1, renderPosition, onMove, onSelect, onDragStart, onDragEnd, onAnchorDragStart,
+    layoutMode = 'absolute',
 }) => {
     const pos = renderPosition ?? node.position;
 
@@ -38,7 +40,7 @@ export const ArticleNodeComponent: React.FC<ArticleNodeProps> = ({
         onMove: handleMove,
         onEnd: handleEnd,
         onStart: () => { onSelect(node.id); onDragStart?.(node.id); },
-        disabled: node.locked,
+        disabled: node.locked || layoutMode === 'flow',
     });
 
     const renderDate = (dateStr: string) => {
@@ -51,18 +53,26 @@ export const ArticleNodeComponent: React.FC<ArticleNodeProps> = ({
 
     const cls = [
         'rf-article-node',
+        layoutMode === 'flow' && 'rf-article-node--flow',
         selected && 'rf-article-node--selected',
         isDragging.current && 'rf-article-node--dragging',
     ].filter(Boolean).join(' ');
 
+    const style: React.CSSProperties = layoutMode === 'absolute'
+        ? {
+            transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`,
+            zIndex: Math.round(pos.z) + (isDragging.current ? 10000 : 0),
+        }
+        : {
+            position: 'relative',
+        };
+
     return (
         <div
             className={cls}
-            style={{
-                transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`,
-                zIndex: Math.round(pos.z) + (isDragging.current ? 10000 : 0),
-            }}
+            style={style}
             {...dragHandlers}
+            onClick={() => layoutMode === 'flow' && onSelect(node.id)}
         >
             {/* Link anchors */}
             <div className="rf-article-node__anchors">

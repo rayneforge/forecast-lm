@@ -50,13 +50,26 @@ var managementApi = builder.AddProject<Projects.Rayneforge_Forecast_API_Manageme
     .WithEnvironment("AzureAd__ClientId", builder.Configuration["AzureAd:ClientId"] ?? "");
     // .WithReference(keyVault);    // ← uncomment for Key Vault
 
-var web = builder.AddExecutable("web", "pnpm", "../Rayneforge.Forecast.UI/apps/public-client")
-    .WithArgs("run", "dev")
-    .WithReference(clientApi)
-    .WithEnvironment("VITE_API_BASE_URL", clientApi.GetEndpoint("http"))
-    .WithEnvironment("VITE_AUTH_MODE", "dev")
-    .WithHttpEndpoint(env: "PORT")
-    .WithExternalHttpEndpoints();
+// ─── 3a. Web UI ─────────────────────────────────────────────────
+if (!builder.ExecutionContext.IsPublishMode)
+{
+    // Local dev: pnpm dev server with HMR
+    var web = builder.AddExecutable("web", "pnpm", "../Rayneforge.Forecast.UI/apps/public-client")
+        .WithArgs("run", "dev")
+        .WithReference(clientApi)
+        .WithEnvironment("VITE_API_BASE_URL", clientApi.GetEndpoint("http"))
+        .WithEnvironment("VITE_AUTH_MODE", "dev")
+        .WithHttpEndpoint(env: "PORT")
+        .WithExternalHttpEndpoints();
+}
+else
+{
+    // Publish: containerized Vite build served by nginx
+    var web = builder.AddDockerfile("web", "../Rayneforge.Forecast.UI")
+        .WithHttpEndpoint(targetPort: 80)
+        .WithExternalHttpEndpoints()
+        .WithReference(clientApi);
+}
 
 var worker = builder.AddProject<Projects.Rayneforge_Forecast_Worker>("worker")
     .WithReference(blobs)

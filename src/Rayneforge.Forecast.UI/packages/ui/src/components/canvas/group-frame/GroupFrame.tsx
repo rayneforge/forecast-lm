@@ -44,6 +44,7 @@ export interface GroupFrameProps {
     depthLabel?: string;
     /** Child layout groups (rendered inside workspace variant) */
     childLayoutGroups?: LayoutGroup[];
+    layoutMode?: 'flow' | 'absolute';
 
     children?: React.ReactNode;
 }
@@ -98,6 +99,7 @@ export const GroupFrame: React.FC<GroupFrameProps> = ({
     activeLayoutMode, layoutDepth, onReflow, onDrillIn, onDrillOut, onClearLayout, onAddNote, depthLabel,
     childLayoutGroups,
     children,
+    layoutMode = 'absolute',
 }) => {
     const memberNodes = useMemo(() => {
         const idSet = new Set(group.nodeIds);
@@ -113,20 +115,23 @@ export const GroupFrame: React.FC<GroupFrameProps> = ({
     }, [childLayoutGroups]);
 
     // Use pre-computed layout bounds if available, otherwise derive from node positions
-    const bounds = layoutBounds ?? getBounds(memberNodes, variant === 'workspace' ? 40 : 20, childBounds);
+    const bounds = useMemo(() => {
+        if (layoutMode === 'flow') return { x: 0, y: 0, w: 0, h: 0 };
+        return layoutBounds ?? getBounds(memberNodes, variant === 'workspace' ? 40 : 20, childBounds);
+    }, [layoutMode, layoutBounds, memberNodes, variant, childBounds]);
 
     // ── Independent group drag ──────────────────────────────
     const dragging = useRef(false);
     const dragStart = useRef({ x: 0, y: 0 });
 
     const handlePointerDown = useCallback((e: RPointerEvent<HTMLSpanElement>) => {
-        if (!onMoveGroup) return;
+        if (!onMoveGroup || layoutMode === 'flow') return;
         e.stopPropagation();
         e.preventDefault();
         dragging.current = true;
         dragStart.current = { x: e.clientX, y: e.clientY };
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    }, [onMoveGroup]);
+    }, [onMoveGroup, layoutMode]);
 
     const handlePointerMove = useCallback((e: RPointerEvent<HTMLSpanElement>) => {
         if (!dragging.current || !onMoveGroup) return;
@@ -154,19 +159,28 @@ export const GroupFrame: React.FC<GroupFrameProps> = ({
     const cls = [
         'rf-group-frame',
         `rf-group-frame--${variant}`,
+        layoutMode === 'flow' && 'rf-group-frame--flow',
         selected && 'rf-group-frame--selected',
     ].filter(Boolean).join(' ');
+
+    const style: React.CSSProperties = layoutMode === 'flow'
+        ? {
+            position: 'relative',
+            borderColor: group.color || undefined,
+            width: '100%',
+        }
+        : {
+            left: bounds.x,
+            top: bounds.y,
+            width: bounds.w,
+            height: bounds.h,
+            borderColor: group.color || undefined,
+        };
 
     return (
         <div
             className={cls}
-            style={{
-                left: bounds.x,
-                top: bounds.y,
-                width: bounds.w,
-                height: bounds.h,
-                borderColor: group.color || undefined,
-            }}
+            style={style}
         >
             <span
                 className="rf-group-frame__label"

@@ -1,0 +1,222 @@
+@use "@rayneforge/styles" as *;
+
+// ─── Command Bar ────────────────────────────────────────────────
+// Bottom-bar input that doubles as note creator + search flyover.
+
+.rf-command-bar {
+    position: relative;
+    flex-shrink: 0;
+    width: 75%;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: $spacing-2 0 $spacing-3;
+
+    // ── Flyover ──────────────────────────────────────────────
+    &__flyover {
+        position: absolute;
+        bottom: 100%;
+        left: $spacing-4;
+        right: $spacing-4;
+        background: $color-canvas-surface;
+        border: 1px solid $color-border-subtle;
+        border-radius: $radius-md;
+        padding: $spacing-3;
+        box-shadow: $elevation-float;
+        max-height: 220px;
+        overflow-y: auto;
+        margin-bottom: $spacing-1;
+    }
+
+    &__flyover-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: $color-text-muted;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: $spacing-2;
+    }
+
+    &__flyover-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: $spacing-1;
+    }
+
+    // ── Pills ────────────────────────────────────────────────
+    &__pill {
+        all: unset;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: $spacing-1;
+        padding: 3px $spacing-2;
+        border-radius: $radius-full;
+        font-size: $font-size-meta;
+        transition: all $motion-fast $ease-standard;
+        white-space: nowrap;
+        max-width: 240px;
+
+        &--article {
+            background: rgba(#58a6ff, 0.12);
+            color: #58a6ff;
+            &:hover { background: rgba(#58a6ff, 0.22); }
+        }
+
+        &--narrative {
+            background: rgba(#f0883e, 0.12);
+            color: #f0883e;
+            &:hover { background: rgba(#f0883e, 0.22); }
+        }
+
+        &--claim {
+            background: rgba(#E06C75, 0.12);
+            color: #E06C75;
+            &:hover { background: rgba(#E06C75, 0.22); }
+        }
+
+        &--entity {
+            background: rgba(#7ee787, 0.12);
+            color: #7ee787;
+            &:hover { background: rgba(#7ee787, 0.22); }
+        }
+    }
+
+    &__pill-icon {
+        font-size: 11px;
+        flex-shrink: 0;
+    }
+
+    &__pill-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    // ── Attachments tray ──────────────────────────────────────
+    &__attachments {
+        display: flex;
+        flex-wrap: wrap;
+        gap: $spacing-1;
+        padding: 0 0 $spacing-2;
+    }
+
+    &__attachment {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px $spacing-2;
+        border-radius: $radius-full;
+        font-size: $font-size-meta;
+        max-width: 220px;
+        animation: rf-attach-in $motion-fast $ease-standard;
+
+        &--article {
+            background: rgba(#58a6ff, 0.12);
+            color: #58a6ff;
+        }
+        &--narrative {
+            background: rgba(#f0883e, 0.12);
+            color: #f0883e;
+        }
+        &--claim {
+            background: rgba(#E06C75, 0.12);
+            color: #E06C75;
+        }
+        &--entity {
+            background: rgba(#7ee787, 0.12);
+            color: #7ee787;
+        }
+    }
+
+    &__attachment-icon {
+        font-size: 11px;
+        flex-shrink: 0;
+    }
+
+    &__attachment-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__attachment-remove {
+        all: unset;
+        cursor: pointer;
+        font-size: 10px;
+        opacity: 0.5;
+        margin-left: 2px;
+        padding: 0 2px;
+        border-radius: $radius-sm;
+        transition: opacity $motion-fast;
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+
+    // ── Input area ───────────────────────────────────────────
+    &__input-area {
+        display: flex;
+        align-items: flex-end;
+        gap: $spacing-2;
+        background: $color-canvas-board;
+        border: 1px solid $color-border-subtle;
+        border-radius: $radius-lg;
+        padding: $spacing-2 $spacing-3;
+        transition: border-color $motion-fast $ease-standard;
+
+        &:focus-within {
+            border-color: $color-accent-primary;
+        }
+    }
+
+    &__input {
+        all: unset;
+        flex: 1;
+        font-size: $font-size-body;
+        color: $color-text-primary;
+        resize: none;
+        line-height: 1.4;
+        max-height: 120px;
+        overflow-y: auto;
+
+        &::placeholder {
+            color: $color-text-muted;
+        }
+    }
+
+    &__send {
+        all: unset;
+        cursor: pointer;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: $radius-sm;
+        font-size: 14px;
+        color: $color-text-muted;
+        transition: all $motion-fast $ease-standard;
+
+        &--active {
+            color: $color-accent-primary;
+            background: rgba($color-accent-primary, 0.1);
+        }
+
+        &:disabled {
+            cursor: default;
+            opacity: 0.4;
+        }
+    }
+}
+
+@keyframes rf-attach-in {
+    from {
+        opacity: 0;
+        transform: scale(0.85);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}

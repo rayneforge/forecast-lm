@@ -13,10 +13,12 @@ export interface EntityNodeProps {
     onDragStart?: (id: string) => void;
     onDragEnd?: (id: string, position: Vector3, velocity: Vector3) => void;
     onAnchorDragStart?: (nodeId: string, anchor: string, pointerId: number) => void;
+    layoutMode?: 'flow' | 'absolute';
 }
 
 export const EntityNodeComponent: React.FC<EntityNodeProps> = ({
     node, selected, zoom = 1, renderPosition, onMove, onSelect, onDragStart, onDragEnd, onAnchorDragStart,
+    layoutMode = 'absolute',
 }) => {
     const pos = renderPosition ?? node.position;
 
@@ -36,23 +38,31 @@ export const EntityNodeComponent: React.FC<EntityNodeProps> = ({
         onMove: handleMove,
         onEnd: handleEnd,
         onStart: () => { onSelect(node.id); onDragStart?.(node.id); },
-        disabled: node.locked,
+        disabled: node.locked || layoutMode === 'flow',
     });
 
     const cls = [
         'rf-entity-node',
+        layoutMode === 'flow' && 'rf-entity-node--flow',
         selected && 'rf-entity-node--selected',
         isDragging.current && 'rf-entity-node--dragging',
     ].filter(Boolean).join(' ');
 
+    const style: React.CSSProperties = layoutMode === 'absolute'
+        ? {
+            transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`,
+            zIndex: Math.round(pos.z) + (isDragging.current ? 10000 : 0),
+        }
+        : {
+            position: 'relative',
+        };
+
     return (
         <div
             className={cls}
-            style={{
-                transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`,
-                zIndex: Math.round(pos.z) + (isDragging.current ? 10000 : 0),
-            }}
+            style={style}
             {...dragHandlers}
+            onClick={() => layoutMode === 'flow' && onSelect(node.id)}
         >
             <div className="rf-entity-node__anchors">
                 {(['top', 'right', 'bottom', 'left'] as const).map(dir => (

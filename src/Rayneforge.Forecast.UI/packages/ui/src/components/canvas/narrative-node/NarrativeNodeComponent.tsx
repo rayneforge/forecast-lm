@@ -31,10 +31,12 @@ export interface NarrativeNodeProps {
     onDragStart?: (id: string) => void;
     onDragEnd?: (id: string, position: Vector3, velocity: Vector3) => void;
     onAnchorDragStart?: (nodeId: string, anchor: string, pointerId: number) => void;
+    layoutMode?: 'flow' | 'absolute';
 }
 
 export const NarrativeNodeComponent: React.FC<NarrativeNodeProps> = ({
     node, selected, zoom = 1, renderPosition, onMove, onSelect, onDragStart, onDragEnd, onAnchorDragStart,
+    layoutMode = 'absolute',
 }) => {
     const pos = renderPosition ?? node.position;
 
@@ -54,26 +56,35 @@ export const NarrativeNodeComponent: React.FC<NarrativeNodeProps> = ({
         onMove: handleMove,
         onEnd: handleEnd,
         onStart: () => { onSelect(node.id); onDragStart?.(node.id); },
-        disabled: node.locked,
+        disabled: node.locked || layoutMode === 'flow',
     });
 
     const accent = categoryColor(node.data.category);
 
     const cls = [
         'rf-narrative-node',
+        layoutMode === 'flow' && 'rf-narrative-node--flow',
         selected && 'rf-narrative-node--selected',
         isDragging.current && 'rf-narrative-node--dragging',
     ].filter(Boolean).join(' ');
 
+    const style: React.CSSProperties = layoutMode === 'absolute'
+        ? {
+            transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`,
+            zIndex: Math.round(pos.z) + (isDragging.current ? 10000 : 0),
+            borderTopColor: accent,
+        }
+        : {
+            position: 'relative',
+            borderTopColor: accent,
+        };
+
     return (
         <div
             className={cls}
-            style={{
-                transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`,
-                zIndex: Math.round(pos.z) + (isDragging.current ? 10000 : 0),
-                borderTopColor: accent,
-            }}
+            style={style}
             {...dragHandlers}
+            onClick={() => layoutMode === 'flow' && onSelect(node.id)}
         >
             {/* Link anchors */}
             <div className="rf-narrative-node__anchors">

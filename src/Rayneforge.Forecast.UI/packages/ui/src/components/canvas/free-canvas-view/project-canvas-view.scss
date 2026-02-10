@@ -1,0 +1,85 @@
+@use "@rayneforge/styles" as *;
+
+// ─── Single-surface pannable graph ──────────────────────────────
+
+.rf-graph {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+
+    // ── Pannable viewport fills the whole area ─────────
+    &__viewport {
+        flex: 1;
+        overflow: hidden;
+        cursor: grab;
+        background:
+            $color-canvas-board
+            radial-gradient(circle at 1px 1px, rgba($color-border-subtle, 0.2) 1px, transparent 0)
+            0 0 / 24px 24px;
+
+        &:active {
+            cursor: grabbing;
+        }
+    }
+
+    // ── Inner surface sized to fit all nodes ───────────
+    &__surface {
+        position: relative;
+        min-width: 100%;
+        min-height: 100%;
+        will-change: transform;
+    }
+
+    // ── Floating group labels on the canvas ────────────
+    &__group-label {
+        position: absolute;
+        transform: translateX(-50%);
+        font-size: $font-size-meta;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: $color-text-muted;
+        background: rgba($color-canvas-surface, 0.75);
+        backdrop-filter: blur(6px);
+        padding: 2px $spacing-3;
+        border-radius: $radius-full;
+        border: 1px solid $color-border-subtle;
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    // ── Empty state ────────────────────────────────────
+    &__empty {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: $color-text-muted;
+        font-size: $font-size-body;
+        pointer-events: none;
+    }
+
+    // ── Zoom indicator badge (bottom-left) ─────────────
+    &__zoom-badge {
+        position: absolute;
+        bottom: $spacing-3;
+        left: $spacing-3;
+        font-size: 11px;
+        font-weight: 600;
+        color: $color-text-muted;
+        background: rgba($color-canvas-surface, 0.8);
+        backdrop-filter: blur(6px);
+        padding: 2px $spacing-2;
+        border-radius: $radius-sm;
+        border: 1px solid $color-border-subtle;
+        pointer-events: none;
+        z-index: 2;
+    }
+}

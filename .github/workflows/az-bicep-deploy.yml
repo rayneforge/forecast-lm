@@ -16,7 +16,7 @@ env:
   AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
   AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
   AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-  AZURE_ENV_NAME: rayneforge-prod
+  AZURE_ENV_NAME: rayneforge-forecast-prod
   AZURE_LOCATION: eastus2
 
 jobs:
@@ -25,11 +25,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x' 
 
       - name: Log in with Azure (Federated Credentials)
         uses: azure/login@v2
@@ -44,30 +39,15 @@ jobs:
           oid=$(az ad sp show --id ${{ env.AZURE_CLIENT_ID }} --query id --output tsv)
           echo "oid=$oid" >> $GITHUB_OUTPUT
 
-      - name: Create Resource Group
-        run: az group create --name rg-${{ env.AZURE_ENV_NAME }} --location ${{ env.AZURE_LOCATION }}
-
-      - name: Provision Infrastructure (Aspire)
+      # main.bicep is generated locally via generate-bicep.ps1 and committed.
+      # It targets subscription scope and creates its own resource group.
+      - name: Deploy Infrastructure
         uses: azure/arm-deploy@v2
-        id: aspire-deploy
         with:
-          scope: resourcegroup
-          resourceGroupName: rg-${{ env.AZURE_ENV_NAME }}
+          scope: subscription
+          region: ${{ env.AZURE_LOCATION }}
           template: infra/main.bicep
           parameters: |
+            environmentName=${{ env.AZURE_ENV_NAME }}
             principalId=${{ steps.get-sp-id.outputs.oid }}
             location=${{ env.AZURE_LOCATION }}
-
-      - name: Assign RBAC Roles
-        uses: azure/arm-deploy@v2
-        with:
-          scope: resourcegroup
-          resourceGroupName: rg-${{ env.AZURE_ENV_NAME }}
-          template: infra/azure/bicep/rbac.bicep
-          parameters: |
-            identityPrincipalId=${{ steps.aspire-deploy.outputs.identityPrincipalId }}
-            cosmosAccountId=${{ steps.aspire-deploy.outputs.cosmosAccountId }}
-            keyVaultId=${{ steps.aspire-deploy.outputs.keyVaultId }}
-            openAiAccountId=${{ steps.aspire-deploy.outputs.openAiAccountId }}
-            storageAccountId=${{ steps.aspire-deploy.outputs.storageAccountId }}
-            serviceBusNamespaceId=${{ steps.aspire-deploy.outputs.messagingNamespaceId }}
